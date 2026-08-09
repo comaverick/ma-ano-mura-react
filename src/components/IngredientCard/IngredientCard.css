@@ -1,0 +1,43 @@
+.ingredient-card {
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.ingredient-image {
+    height: 180px;
+    object-fit: cover;
+}
+
+.ingredient-card h3 {
+    margin: 12px 0 8px;
+    font-size: 22px;
+}
+
+.ingredient-card h2 {
+    margin: 0;
+    color: #15803d;
+}
+
+.ingredient-card h2 span {
+    color: #6b7280;
+    font-size: 16px;
+    font-weight: 400;
+}
+
+.ingredient-history {
+    display: flex;
+    justify-content: space-between;
+    margin: 18px 0;
+    color: #6b7280;
+}
+
+.ingredient-chart {
+    height: 70px;
+    background: #f5f5f5;
+    border-radius: 10px;
+    margin-bottom: 18px;
+}
+
+.ingredient-button {
+    font-weight: 600;
+}

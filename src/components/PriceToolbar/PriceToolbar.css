@@ -1,0 +1,16 @@
+.price-toolbar {
+    padding: 30px 20px;
+}
+
+.price-toolbar-container {
+    max-width: 1000px;
+    margin: 0 auto;
+
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.toolbar-filters {
+    width: 100%;
+}

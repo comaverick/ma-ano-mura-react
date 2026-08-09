@@ -1,0 +1,39 @@
+.price-hero {
+    width: 100%;
+    padding: 60px 20px;
+    background: #f8fffa;
+}
+
+.price-hero-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+.price-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.price-badge {
+    font-size: 14px;
+    font-weight: 700;
+    color: #166534;
+    background: #dcfce7;
+    padding: 8px 14px;
+    border-radius: 9999px;
+}
+
+.price-header h1 {
+    margin: 0;
+    font-size: 42px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.price-header p {
+    max-width: 600px;
+    margin: 0;
+    text-align: center;
+    color: #6b7280;
+}

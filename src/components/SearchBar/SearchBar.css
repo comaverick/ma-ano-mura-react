@@ -1,0 +1,32 @@
+.search-input {
+    width: 60%;
+}
+.search-input .ant-input-affix-wrapper {
+    border-radius: 9999px 0 0 9999px;
+    height: 45px;
+}
+.search-input .ant-btn {
+    height: 45px;
+    border-radius: 9999px 9999px 9999px 9999px;
+    background-color: #28A15A;
+    border-color: #28A15A;
+    font-weight: 600;
+    width: 100px;
+    
+}
+
+.search-input .ant-input-affix-wrapper:focus-within, .search-input .ant-input-affix-wrapper:hover {
+    border-color: #28A15A;
+    
+}
+.search-input .ant-input-affix-wrapper:focus-within {
+    box-shadow: 0 0 0 2px rgba(40, 161, 90, 0.15);
+}
+.search-input .ant-btn:hover {
+    background-color: #15803d !important;
+    border-color: #15803d !important;
+}
+.search-input .ant-input-affix-wrapper,
+.search-input .ant-btn {
+    transition: all 0.2s ease;
+}

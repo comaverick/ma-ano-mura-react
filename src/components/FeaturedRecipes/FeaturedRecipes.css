@@ -1,0 +1,41 @@
+.featured-recipes {
+    width: 100%;
+    padding: 40px 20px;
+}
+.featured-recipes-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.featured-header {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 16px;
+    margin-bottom: 50px;
+}
+.featured-badge {
+    font-size: 12px;
+    font-weight: 600;
+    background-color: #dcfce7;
+    color: #166534;
+    padding: 8px 14px;
+    border-radius: 9999px;
+}
+.featured-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+.featured-header p {
+    max-width: 550px;
+    text-align: center;
+    color: #6b7280;
+    margin: 0;
+}
+.recipe-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
