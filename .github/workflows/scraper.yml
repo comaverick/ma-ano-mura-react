@@ -12,8 +12,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
 
     steps:
       - name: Checkout repository
