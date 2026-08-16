@@ -2,7 +2,7 @@
     border: 1px solid #e5e7eb;
     border-radius: 16px;
     overflow: hidden;
-    transition: all 0.25s ease;
+    transition: all 0.4s ease;
     cursor: pointer;
 }
 .recipe-card:hover {

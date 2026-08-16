@@ -1,17 +1,38 @@
 import "./IngredientCard.css";
 import { Card, Button, Tag } from "antd";
+import { ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
+import {
+  LineChart,
+  Line,
+  ResponsiveContainer,
+  YAxis,
+  Tooltip
+} from "recharts";
 
 const IngredientCard = ({
   name,
   category,
   price,
-  previousPrice,
+  averagePrice,
   unit,
+  priceHistory,
 }) => {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const priceDifference = price - previousPrice;
+  const last30Days = priceHistory.filter(
+    (item) => new Date(item.date) >= thirtyDaysAgo
+  );
+
+  const priceDifference = price - averagePrice;
+
+const pricePercentage =
+  averagePrice > 0
+    ? ((price - averagePrice) / averagePrice) * 100
+    : 0;
+
   return (
-    <Card className="ingredient-card" hoverable>
+    <Card className="ingredient-card">
 
       <div className="ingredient-content">
 
@@ -23,18 +44,18 @@ const IngredientCard = ({
 
         <h2>
           ₱{price}
-          <span> / {unit}</span>
+          <span className="price-unit"> / {unit}</span>
         </h2>
 
         <div className="ingredient-history">
-          <span>Previous Price</span>
+          <span>30-day average</span>
 
           <span>
-            ₱{previousPrice}
+            ₱{Number(averagePrice).toFixed(2)}
           </span>
         </div>
 
-        {previousPrice && (
+        {averagePrice != null && (
           <div
             className={
               priceDifference > 0
@@ -44,26 +65,56 @@ const IngredientCard = ({
                 : "price-same"
             }
           >
-            {priceDifference > 0
-              ? `▲ ₱${priceDifference}`
-              : priceDifference < 0
-              ? `▼ ₱${Math.abs(priceDifference)}`
-              : "No change"}
+            {priceDifference > 0 ? (
+              <>
+                <ArrowUpOutlined />
+                {" ₱" + Number(priceDifference).toFixed(2)}
+                {" (+" + pricePercentage.toFixed(1) + "%)"}
+              </>
+            ) : priceDifference < 0 ? (
+              <>
+                <ArrowDownOutlined />
+                {" ₱" + Math.abs(Number(priceDifference)).toFixed(2)}
+                {" (" + pricePercentage.toFixed(1) + "%)"}
+              </>
+            ) : (
+              "No change"
+            )}
           </div>
         )}
 
         <div className="ingredient-chart">
-          Price Trend
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={[...last30Days].reverse()}
+            >
+              <YAxis hide domain={["auto", "auto"]} />
+              <Tooltip
+                formatter={(value) => `₱${Number(value).toFixed(2)}`}
+                contentStyle={{
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  border: "1px solid #e5e7eb",
+                  fontSize: "11px",
+                }}
+                labelStyle={{
+                  display: "none",
+                }}
+                cursor={{
+                  stroke: "#d1d5db",
+                  strokeWidth: 1,
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="avg_price"
+                stroke="#15803d"
+                strokeWidth={2}
+                dot={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
-
-        <Button
-          className="ingredient-button"
-          color="green"
-          variant="solid"
-          block
-        >
-          View Details
-        </Button>
 
       </div>
 
