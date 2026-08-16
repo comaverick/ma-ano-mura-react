@@ -1,6 +1,5 @@
 import React from 'react'
 import './PriceHero.css'
-import SearchBar from "../SearchBar/SearchBar";
 
 const PriceHero = () => {
   return (

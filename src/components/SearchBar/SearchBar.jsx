@@ -1,6 +1,6 @@
 import React from 'react'
 import { SearchOutlined } from '@ant-design/icons'
-import { Flex, Input, Button } from 'antd'
+import { Input, Button } from 'antd'
 import './SearchBar.css'
 const { Search } = Input;
 

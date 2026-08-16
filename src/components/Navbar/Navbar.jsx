@@ -1,5 +1,5 @@
 import React from 'react'
-import { Flex, Button, Section } from "antd";
+import { Flex, Button } from "antd";
 import "./Navbar.css";
 import logo from "../../assets/logo.svg"
 import { NavLink, Link, useLocation  } from "react-router-dom";

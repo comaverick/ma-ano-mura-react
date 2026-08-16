@@ -6,7 +6,7 @@ const RecipeCard = ({image}) => {
   return (
     <div className='recipe-card'>
         <div className="recipe-image">
-            <img src={image} ></img>
+            <img src={image} alt='ulam'></img>
         </div>
 
         <div className="recipe-content">

@@ -4,7 +4,7 @@ const { Title } = Typography;
 
 
 const Categories = () => {
-  const [port, setPort] = useState(null);
+
   const [writer, setWriter] = useState(null);
 
   async function connectArduino() {
@@ -13,8 +13,6 @@ const Categories = () => {
     await selectedPort.open({
       baudRate: 9600,
     });
-
-    setPort(selectedPort);
 
     const writer = selectedPort.writable.getWriter();
     setWriter(writer);
