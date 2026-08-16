@@ -1,13 +1,11 @@
 import React from 'react'
 import PriceHero from '../../components/PriceHero/PriceHero';
-import PriceToolbar from '../../components/PriceToolbar/PriceToolbar';
 import { useEffect, useState } from "react";
 import { supabase } from "../../supabaseClient";
 import IngredientCard from '../../components/IngredientCard/IngredientCard';
-import { Skeleton, Input, Select } from "antd";
+import { Skeleton, Input } from "antd";
 import './Prices.css'
 import { SearchOutlined, AppstoreOutlined,
-  CarOutlined,
   CoffeeOutlined,
   FireOutlined,
   GiftOutlined,

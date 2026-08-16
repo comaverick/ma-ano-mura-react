@@ -1,5 +1,5 @@
 import "./IngredientCard.css";
-import { Card, Button, Tag } from "antd";
+import { Card, Tag } from "antd";
 import { ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
 import {
   LineChart,

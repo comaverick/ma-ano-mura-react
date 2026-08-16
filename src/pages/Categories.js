@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import Navbar from '../components/Navbar/Navbar'
 import { Button, Space, Typography } from 'antd'
 const { Title } = Typography;
 

@@ -1,5 +1,4 @@
 import React from 'react'
-import { Flex, Input, Button } from 'antd'
 import "./Hero.css"
 import SearchBar from '../SearchBar/SearchBar'
 

@@ -1,5 +1,4 @@
 import React from 'react'
-import Navbar from '../components/Navbar/Navbar'
 import { useState } from "react";
 import { Button } from "antd";
 const Recipes = () => {
