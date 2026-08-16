@@ -1,7 +1,6 @@
 name: Daily DA Scraper
 
 on:
-
   schedule:
     - cron: "0 16 * * *"
 
@@ -27,20 +26,6 @@ jobs:
       - name: Install dependencies
         run: npm install
         working-directory: ./scraper
-
-      - name: Check Supabase secrets
-        run: |
-          if [ -z "$SUPABASE_URL" ]; then
-            echo "SUPABASE_URL is MISSING"
-          else
-            echo "SUPABASE_URL is available"
-          fi
-
-          if [ -z "$SUPABASE_KEY" ]; then
-            echo "SUPABASE_KEY is MISSING"
-          else
-            echo "SUPABASE_KEY is available"
-          fi
 
       - name: Run scraper
         run: node index.js
