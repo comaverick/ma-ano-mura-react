@@ -1,7 +1,12 @@
 const fs = require("fs");
+const path = require("path");
+
+// Always use the scraper folder where this file is located
+const inputPath = path.join(__dirname, "sm-products.json");
+const outputPath = path.join(__dirname, "sm-food-products.json");
 
 const products = JSON.parse(
-  fs.readFileSync("scraper/sm-products.json", "utf8")
+  fs.readFileSync(inputPath, "utf8")
 );
 
 function normalize(text) {
@@ -171,10 +176,11 @@ Object.entries(counts)
     console.log(`${category}: ${count}`);
   });
 
+// Save filtered products
 fs.writeFileSync(
-  "scraper/sm-food-products.json",
+  outputPath,
   JSON.stringify(filtered, null, 2)
 );
 
 console.log("\nSaved:");
-console.log("scraper/sm-food-products.json");
+console.log(outputPath);
