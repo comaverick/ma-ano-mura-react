@@ -1,9 +1,6 @@
 name: Daily DA and SM Scraper
 
 on:
-  schedule:
-    - cron: "0 16 * * *"
-
   workflow_dispatch:
 
 jobs:
@@ -24,15 +21,11 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --foreground-scripts
         working-directory: ./scraper
 
-      # =========================
-      # SM SUPERMARKETS
-      # =========================
-
-      - name: Install Chrome for Puppeteer
-        run: node node_modules/puppeteer/cli.js browsers install chrome
+      - name: Check Puppeteer Chrome
+        run: node -e "const puppeteer=require('puppeteer'); console.log('Chrome:', puppeteer.executablePath())"
         working-directory: ./scraper
 
       - name: Scrape SM products
@@ -57,12 +50,4 @@ jobs:
 
       - name: Insert SM prices
         run: node insertSMPrices.js
-        working-directory: ./scraper
-
-      # =========================
-      # DA PRICEWATCH
-      # =========================
-
-      - name: Run DA scraper
-        run: node index.js
         working-directory: ./scraper
