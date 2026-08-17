@@ -10,6 +10,7 @@ jobs:
     env:
       SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
+      PUPPETEER_CACHE_DIR: /home/runner/.cache/puppeteer
 
     steps:
       - name: Checkout repository
@@ -21,12 +22,73 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: npm install --foreground-scripts
+        run: npm install
         working-directory: ./scraper
 
-      - name: Check Puppeteer Chrome
-        run: node -e "const puppeteer=require('puppeteer'); console.log('Chrome:', puppeteer.executablePath())"
+      # ========================================
+      # INSTALL CHROME FOR PUPPETEER
+      # ========================================
+
+      - name: Install Chrome
+        run: |
+          node - <<'NODE'
+          const puppeteer = require("puppeteer");
+          const { install } = require("@puppeteer/browsers");
+
+          const buildId = puppeteer.browserVersion;
+
+          console.log("Puppeteer version:", require("puppeteer/package.json").version);
+          console.log("Required Chrome:", buildId);
+          console.log("Cache directory:", process.env.PUPPETEER_CACHE_DIR);
+
+          install({
+            browser: "chrome",
+            buildId: buildId,
+            cacheDir: process.env.PUPPETEER_CACHE_DIR
+          })
+            .then(() => {
+              console.log("Chrome installation complete.");
+            })
+            .catch((error) => {
+              console.error("Chrome installation failed:");
+              console.error(error);
+              process.exit(1);
+            });
+          NODE
         working-directory: ./scraper
+
+      # ========================================
+      # VERIFY CHROME
+      # ========================================
+
+      - name: Verify Chrome
+        run: |
+          node - <<'NODE'
+          const puppeteer = require("puppeteer");
+
+          console.log("Puppeteer version:");
+          console.log(require("puppeteer/package.json").version);
+
+          console.log("Required Chrome:");
+          console.log(puppeteer.browserVersion);
+
+          console.log("Chrome executable:");
+          console.log(puppeteer.executablePath());
+
+          const fs = require("fs");
+
+          if (!fs.existsSync(puppeteer.executablePath())) {
+            console.error("Chrome executable does NOT exist.");
+            process.exit(1);
+          }
+
+          console.log("✓ Chrome executable exists.");
+          NODE
+        working-directory: ./scraper
+
+      # ========================================
+      # SM SUPERMARKETS
+      # ========================================
 
       - name: Scrape SM products
         run: node scrapeSM.js
