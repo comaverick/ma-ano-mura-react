@@ -6,6 +6,10 @@ require("dotenv").config({
   path: path.resolve(__dirname, "../.env"),
 });
 
+// ==========================================
+// SUPABASE CONFIG
+// ==========================================
+
 const supabaseUrl =
   process.env.SUPABASE_URL ||
   process.env.REACT_APP_SUPABASE_URL;
@@ -14,11 +18,40 @@ const supabaseKey =
   process.env.SUPABASE_KEY ||
   process.env.REACT_APP_SUPABASE_ANON_KEY;
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Check environment variables before creating Supabase client
+if (!supabaseUrl) {
+  console.error("ERROR: SUPABASE_URL is not set.");
+  console.error(
+    "Make sure SUPABASE_URL is available in your .env file or GitHub Actions secrets."
+  );
+  process.exit(1);
+}
+
+if (!supabaseKey) {
+  console.error("ERROR: SUPABASE_KEY is not set.");
+  console.error(
+    "Make sure SUPABASE_KEY is available in your .env file or GitHub Actions secrets."
+  );
+  process.exit(1);
+}
+
+const supabase = createClient(
+  supabaseUrl,
+  supabaseKey
+);
+
+// ==========================================
+// LOAD FILTERED SM PRODUCTS
+// ==========================================
+
+const productsPath = path.resolve(
+  __dirname,
+  "sm-food-products.json"
+);
 
 const products = JSON.parse(
   fs.readFileSync(
-    path.resolve(__dirname, "sm-food-products.json"),
+    productsPath,
     "utf8"
   )
 );
@@ -55,13 +88,12 @@ async function run() {
       error
     );
 
-    return;
+    process.exit(1);
   }
 
   console.log(
     `Loaded ${ingredients.length} ingredients.\n`
   );
-
 
   // ==========================================
   // MATCH
@@ -117,7 +149,6 @@ async function run() {
 
   }
 
-
   // ==========================================
   // RESULTS
   // ==========================================
@@ -138,54 +169,58 @@ async function run() {
     "================================"
   );
 
+  // ==========================================
+  // SAVE MATCHED PRODUCTS
+  // ==========================================
 
-  // ==========================================
-  // SAVE
-  // ==========================================
+  const matchedPath = path.resolve(
+    __dirname,
+    "sm-matched.json"
+  );
 
   fs.writeFileSync(
-
-    path.resolve(
-      __dirname,
-      "sm-matched.json"
-    ),
-
+    matchedPath,
     JSON.stringify(
       matched,
       null,
       2
     )
+  );
 
+  // ==========================================
+  // SAVE UNMATCHED PRODUCTS
+  // ==========================================
+
+  const unmatchedPath = path.resolve(
+    __dirname,
+    "sm-unmatched.json"
   );
 
   fs.writeFileSync(
-
-    path.resolve(
-      __dirname,
-      "sm-unmatched.json"
-    ),
-
+    unmatchedPath,
     JSON.stringify(
       unmatched,
       null,
       2
     )
-
   );
 
+  // ==========================================
+  // DONE
+  // ==========================================
 
-  console.log(
-    "\nSaved:"
-  );
-
-  console.log(
-    "scraper/sm-matched.json"
-  );
-
-  console.log(
-    "scraper/sm-unmatched.json"
-  );
-
+  console.log("\nSaved:");
+  console.log(matchedPath);
+  console.log(unmatchedPath);
 }
 
-run();
+run().catch((error) => {
+
+  console.error(
+    "\nUnexpected error:"
+  );
+
+  console.error(error);
+
+  process.exit(1);
+});
