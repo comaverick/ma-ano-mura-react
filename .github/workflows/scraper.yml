@@ -1,4 +1,4 @@
-name: Daily DA Scraper
+name: Daily DA and SM Scraper
 
 on:
   schedule:
@@ -27,6 +27,36 @@ jobs:
         run: npm install
         working-directory: ./scraper
 
-      - name: Run scraper
+      # =========================
+      # DA PRICEWATCH
+      # =========================
+      - name: Run DA scraper
         run: node index.js
+        working-directory: ./scraper
+
+      # =========================
+      # SM SUPERMARKETS
+      # =========================
+      - name: Scrape SM products
+        run: node scrapeSM.js
+        working-directory: ./scraper
+
+      - name: Filter SM products
+        run: node filterSM.js
+        working-directory: ./scraper
+
+      - name: Match SM products
+        run: node matchSM.js
+        working-directory: ./scraper
+
+      - name: Normalize SM prices
+        run: node normalizeSM.js
+        working-directory: ./scraper
+
+      - name: Get best SM prices
+        run: node getBestSMPrices.js
+        working-directory: ./scraper
+
+      - name: Insert SM prices
+        run: node insertSMPrices.js
         working-directory: ./scraper
