@@ -28,7 +28,7 @@ jobs:
         working-directory: ./scraper
 
       - name: Install Puppeteer Chrome
-        run: npx @puppeteer/browsers install chrome
+        run: ./node_modules/.bin/puppeteer browsers install chrome
         working-directory: ./scraper
 
       # =========================
