@@ -7,7 +7,7 @@ const path = require("path");
 
 const inputPath = path.join(
   __dirname,
-  "sm-pantry-matched.json"
+  "sm-matched.json"
 );
 
 const outputPath = path.join(
@@ -168,15 +168,12 @@ for (const product of products) {
 // ---------------------------------------
 
 fs.writeFileSync(
-
   outputPath,
-
   JSON.stringify(
     normalized,
     null,
     2
   )
-
 );
 
 // ---------------------------------------
@@ -197,7 +194,7 @@ for (const product of testProducts) {
   );
 
   console.log(
-    `  → ${product.pantry_ingredient}`
+    `  → ${product.pantry_ingredient ?? product.ingredient_name ?? "N/A"}`
   );
 
   console.log(
