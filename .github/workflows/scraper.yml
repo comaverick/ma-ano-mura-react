@@ -13,34 +13,17 @@ jobs:
       PUPPETEER_CACHE_DIR: /home/runner/.cache/puppeteer
 
     steps:
-
-      # =========================
-      # CHECKOUT
-      # =========================
-
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      # =========================
-      # NODE.JS
-      # =========================
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # =========================
-      # INSTALL DEPENDENCIES
-      # =========================
-
       - name: Install dependencies
         run: npm install
         working-directory: ./scraper
-
-      # =========================
-      # INSTALL CHROME
-      # =========================
 
       - name: Install Chrome for Puppeteer
         run: |
@@ -70,20 +53,13 @@ jobs:
           NODE
         working-directory: ./scraper
 
-      # =========================
-      # VERIFY CHROME
-      # =========================
-
       - name: Verify Chrome
         run: |
           node - <<'NODE'
           const puppeteer = require("puppeteer");
           const fs = require("fs");
 
-          console.log(
-            "Puppeteer:",
-            require("puppeteer/package.json").version
-          );
+          console.log("Puppeteer:", require("puppeteer/package.json").version);
 
           const executable = puppeteer.executablePath();
 
@@ -91,38 +67,22 @@ jobs:
           console.log(executable);
 
           if (!fs.existsSync(executable)) {
-            console.error(
-              "❌ Chrome executable does not exist."
-            );
+            console.error("❌ Chrome executable does not exist.");
             process.exit(1);
           }
 
-          console.log(
-            "✓ Chrome executable exists."
-          );
+          console.log("✓ Chrome executable exists.");
           NODE
         working-directory: ./scraper
 
+
       # =========================
-      # DA BANTAY PRESYO
+      # DA PRICEWATCH
       # =========================
-
-      - name: Scrape DA products
-        run: node scrape.js
+      - name: Run DA scraper
+        run: node index.js
         working-directory: ./scraper
-
-      - name: Filter DA products
-        run: node filter.js
-        working-directory: ./scraper
-
-      - name: Match DA products
-        run: node match.js
-        working-directory: ./scraper
-
-      - name: Insert DA prices
-        run: node insertPrices.js
-        working-directory: ./scraper
-
+        
       # =========================
       # SM SUPERMARKETS
       # =========================
