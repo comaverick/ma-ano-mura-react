@@ -11,7 +11,8 @@ import { SearchOutlined, AppstoreOutlined,
   GiftOutlined,
   InboxOutlined,
   ShopOutlined,
-  ShoppingOutlined, } from "@ant-design/icons";
+  ShoppingOutlined,
+  TagOutlined, } from "@ant-design/icons";
 
 const Prices = () => {
 
@@ -23,6 +24,7 @@ const Prices = () => {
   { name: "Spices", icon: <CoffeeOutlined /> },
   { name: "Fruits", icon: <GiftOutlined /> },
   { name: "Rice", icon: <InboxOutlined /> },
+  { name: "Pantry", icon: <TagOutlined /> },
   { name: "Other Commodities", icon: <ShoppingOutlined /> },
 ];
 

@@ -61,7 +61,7 @@
 .category-filters button {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 4px;
 
     border: 1px solid #dceee2;
     background: #f4faf6;
