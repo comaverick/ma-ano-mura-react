@@ -1,8 +1,27 @@
 const fs = require("fs");
+const path = require("path");
+
+// ---------------------------------------
+// File paths
+// ---------------------------------------
+
+const inputPath = path.join(
+  __dirname,
+  "sm-pantry-matched.json"
+);
+
+const outputPath = path.join(
+  __dirname,
+  "sm-normalized.json"
+);
+
+// ---------------------------------------
+// Load products
+// ---------------------------------------
 
 const products = JSON.parse(
   fs.readFileSync(
-    "scraper/sm-pantry-matched.json",
+    inputPath,
     "utf8"
   )
 );
@@ -144,14 +163,13 @@ for (const product of products) {
   });
 }
 
-
 // ---------------------------------------
 // Save
 // ---------------------------------------
 
 fs.writeFileSync(
 
-  "scraper/sm-normalized.json",
+  outputPath,
 
   JSON.stringify(
     normalized,
@@ -160,7 +178,6 @@ fs.writeFileSync(
   )
 
 );
-
 
 // ---------------------------------------
 // Test important examples
@@ -203,5 +220,5 @@ for (const product of testProducts) {
 }
 
 console.log(
-  "Saved: scraper/sm-normalized.json"
+  `Saved: ${outputPath}`
 );
