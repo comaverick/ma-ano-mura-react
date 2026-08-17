@@ -1,19 +1,42 @@
 const fs = require("fs");
+const path = require("path");
+
+// ---------------------------------------
+// File paths
+// ---------------------------------------
+
+const inputPath = path.join(
+  __dirname,
+  "sm-normalized.json"
+);
+
+const outputPath = path.join(
+  __dirname,
+  "sm-best-prices.json"
+);
+
+// ---------------------------------------
+// Load normalized products
+// ---------------------------------------
 
 const products = JSON.parse(
   fs.readFileSync(
-    "scraper/sm-normalized.json",
+    inputPath,
     "utf8"
   )
 );
 
-// Group products by pantry ingredient
+// ---------------------------------------
+// Group products by ingredient
+// ---------------------------------------
+
 const groups = {};
 
 for (const product of products) {
 
+  // matchSM.js creates ingredient_name
   const ingredient =
-    product.pantry_ingredient;
+    product.ingredient_name;
 
   if (!ingredient) {
     continue;
@@ -22,7 +45,8 @@ for (const product of products) {
   // Ignore products where package size
   // could not be determined
   if (
-    product.price_per_100 === null
+    product.price_per_100 === null ||
+    product.price_per_100 === undefined
   ) {
     continue;
   }
@@ -34,8 +58,10 @@ for (const product of products) {
   groups[ingredient].push(product);
 }
 
-
+// ---------------------------------------
 // Find cheapest normalized price
+// ---------------------------------------
+
 const bestPrices = [];
 
 for (
@@ -82,8 +108,10 @@ for (
   });
 }
 
-
+// ---------------------------------------
 // Sort alphabetically
+// ---------------------------------------
+
 bestPrices.sort(
   (a, b) =>
     a.ingredient.localeCompare(
@@ -91,11 +119,13 @@ bestPrices.sort(
     )
 );
 
-
+// ---------------------------------------
 // Save
+// ---------------------------------------
+
 fs.writeFileSync(
 
-  "scraper/sm-best-prices.json",
+  outputPath,
 
   JSON.stringify(
     bestPrices,
@@ -105,8 +135,10 @@ fs.writeFileSync(
 
 );
 
-
+// ---------------------------------------
 // Display
+// ---------------------------------------
+
 console.log(
   `INGREDIENTS: ${bestPrices.length}\n`
 );
@@ -147,5 +179,5 @@ console.log(
 );
 
 console.log(
-  "Saved: scraper/sm-best-prices.json"
+  `Saved: ${outputPath}`
 );
