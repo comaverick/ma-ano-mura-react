@@ -28,16 +28,12 @@ jobs:
         working-directory: ./scraper
 
       # =========================
-      # DA PRICEWATCH
-      # =========================
-
-      - name: Run DA scraper
-        run: node index.js
-        working-directory: ./scraper
-
-      # =========================
       # SM SUPERMARKETS
       # =========================
+
+      - name: Install Chrome for Puppeteer
+        run: node node_modules/puppeteer/cli.js browsers install chrome
+        working-directory: ./scraper
 
       - name: Scrape SM products
         run: node scrapeSM.js
@@ -61,4 +57,12 @@ jobs:
 
       - name: Insert SM prices
         run: node insertSMPrices.js
+        working-directory: ./scraper
+
+      # =========================
+      # DA PRICEWATCH
+      # =========================
+
+      - name: Run DA scraper
+        run: node index.js
         working-directory: ./scraper
