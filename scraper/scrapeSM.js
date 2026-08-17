@@ -4,7 +4,7 @@ const path = require("path");
 
 const URL = "https://smmarkets.ph/pantry.html";
 
-const MAX_SCROLLS = 50;
+const MAX_SCROLLS = 100;
 const WAIT_AFTER_SCROLL = 1500;
 
 async function scrapeSM() {
