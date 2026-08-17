@@ -1,328 +1,263 @@
 const puppeteer = require("puppeteer");
 const fs = require("fs");
+const path = require("path");
 
 const URL = "https://smmarkets.ph/pantry.html";
 
+const MAX_SCROLLS = 50;
+const WAIT_AFTER_SCROLL = 1500;
+
 async function scrapeSM() {
+  console.log("========================================");
+  console.log("🚀 STARTING SM SUPERMARKETS SCRAPER");
+  console.log("========================================");
+
+  console.log("🌐 Launching Chrome...");
 
   const browser = await puppeteer.launch({
     headless: true,
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+    ],
   });
 
-  try {
+  console.log("✓ Chrome launched");
 
-    const page = await browser.newPage();
+  const page = await browser.newPage();
 
-    await page.setUserAgent(
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36"
-    );
+  await page.setViewport({
+    width: 1366,
+    height: 768,
+  });
 
-    console.log("Opening SM Markets Pantry...\n");
+  console.log(`🌐 Opening ${URL}`);
 
-    await page.goto(URL, {
-      waitUntil: "networkidle2",
-      timeout: 60000,
+  await page.goto(URL, {
+    waitUntil: "domcontentloaded",
+    timeout: 120000,
+  });
+
+  console.log("✓ Pantry page loaded");
+
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+
+  console.log("🔎 Starting product collection...");
+  console.log(`⚙️ Maximum scrolls: ${MAX_SCROLLS}`);
+
+  const products = new Map();
+
+  let previousCount = 0;
+  let unchangedCount = 0;
+  let scrollNumber = 0;
+
+  while (scrollNumber < MAX_SCROLLS) {
+    scrollNumber++;
+
+    console.log("");
+    console.log(`🔄 SCROLL #${scrollNumber}/${MAX_SCROLLS}`);
+
+    /*
+     * Collect currently visible products
+     */
+    const newProducts = await page.evaluate(() => {
+      const results = [];
+
+      const links = Array.from(
+        document.querySelectorAll('a[href*=".html"]')
+      );
+
+      for (const link of links) {
+        const href = link.href;
+
+        if (!href.includes("smmarkets.ph")) {
+          continue;
+        }
+
+        if (href.includes("pantry.html")) {
+          continue;
+        }
+
+        const card =
+          link.closest(".product-item") ||
+          link.closest(".product") ||
+          link.closest(".item") ||
+          link.parentElement?.parentElement;
+
+        if (!card) {
+          continue;
+        }
+
+        const text = card.innerText || "";
+
+        const priceMatch = text.match(
+          /₱\s*([\d,]+(?:\.\d{1,2})?)/
+        );
+
+        if (!priceMatch) {
+          continue;
+        }
+
+        const price = parseFloat(
+          priceMatch[1].replace(/,/g, "")
+        );
+
+        if (!price || price <= 0) {
+          continue;
+        }
+
+        let name = "";
+
+        const nameElement =
+          card.querySelector(".product-name") ||
+          card.querySelector(".name") ||
+          card.querySelector("h2") ||
+          card.querySelector("h3") ||
+          card.querySelector("h4");
+
+        if (nameElement) {
+          name = nameElement.innerText.trim();
+        }
+
+        if (!name) {
+          name = link.innerText.trim();
+        }
+
+        if (!name) {
+          continue;
+        }
+
+        results.push({
+          name,
+          price,
+          url: href,
+        });
+      }
+
+      return results;
     });
 
-    await new Promise(resolve =>
-      setTimeout(resolve, 5000)
-    );
-
-
-    const allProducts = new Map();
-
-    let previousCount = 0;
-    let unchangedRounds = 0;
-
-
-    // =====================================================
-    // INFINITE SCROLL
-    // =====================================================
-
-    while (true) {
-
-      // ---------------------------------------------
-      // Extract currently visible products
-      // ---------------------------------------------
-
-      const products =
-        await page.evaluate(() => {
-
-          const results = [];
-
-          const buttons =
-            Array.from(
-              document.querySelectorAll(
-                "button, a"
-              )
-            );
-
-          buttons.forEach((button) => {
-
-            const buttonText =
-              button.innerText
-                ?.replace(/\s+/g, " ")
-                .trim();
-
-            if (
-              buttonText !== "Add to Cart"
-            ) {
-              return;
-            }
-
-            let card =
-              button.parentElement;
-
-
-            for (
-              let i = 0;
-              i < 8 && card;
-              i++
-            ) {
-
-              const text =
-                card.innerText
-                  ?.replace(/\s+/g, " ")
-                  .trim();
-
-              if (
-                text &&
-                text.includes("₱") &&
-                text.length < 1000
-              ) {
-                break;
-              }
-
-              card =
-                card.parentElement;
-            }
-
-
-            if (!card) {
-              return;
-            }
-
-
-            const text =
-              card.innerText
-                .replace(/\s+/g, " ")
-                .trim();
-
-
-            const link =
-              card.querySelector(
-                "a[href]"
-              );
-
-
-            const url =
-              link
-                ? link.href
-                : null;
-
-
-            const priceMatch =
-              text.match(
-                /₱\s*([\d,]+(?:\.\d{1,2})?)/
-              );
-
-
-            const price =
-              priceMatch
-                ? parseFloat(
-                    priceMatch[1]
-                      .replace(/,/g, "")
-                  )
-                : null;
-
-
-            let name =
-              text
-                .replace(
-                  /Quick View/g,
-                  ""
-                )
-                .replace(
-                  /Add to Cart/g,
-                  ""
-                )
-                .replace(
-                  /₱\s*[\d,]+(?:\.\d{1,2})?/g,
-                  ""
-                )
-                .replace(
-                  /\s+/g,
-                  " "
-                )
-                .trim();
-
-
-            if (
-              name &&
-              price !== null &&
-              url
-            ) {
-
-              results.push({
-                name,
-                price,
-                url,
-              });
-
-            }
-
-          });
-
-
-          return results;
-
-        });
-
-
-      // ---------------------------------------------
-      // Add products to Map
-      // ---------------------------------------------
-
-      for (const product of products) {
-
-        allProducts.set(
-          product.url,
-          product
-        );
-
+    /*
+     * Add products to Map
+     */
+    for (const product of newProducts) {
+      if (!products.has(product.url)) {
+        products.set(product.url, product);
       }
-
-
-      const currentCount =
-        allProducts.size;
-
-
-      console.log(
-        `Products collected: ${currentCount}`
-      );
-
-
-      // ---------------------------------------------
-      // Check if new products appeared
-      // ---------------------------------------------
-
-      if (
-        currentCount === previousCount
-      ) {
-
-        unchangedRounds++;
-
-      } else {
-
-        unchangedRounds = 0;
-
-      }
-
-
-      previousCount =
-        currentCount;
-
-
-      // ---------------------------------------------
-      // Stop after several scrolls with no new items
-      // ---------------------------------------------
-
-      if (
-        unchangedRounds >= 3
-      ) {
-
-        console.log(
-          "\nNo new products found."
-        );
-
-        break;
-
-      }
-
-
-      // ---------------------------------------------
-      // Scroll to bottom
-      // ---------------------------------------------
-
-      await page.evaluate(() => {
-
-        window.scrollTo(
-          0,
-          document.body.scrollHeight
-        );
-
-      });
-
-
-      // ---------------------------------------------
-      // Wait for lazy loading
-      // ---------------------------------------------
-
-      await new Promise(resolve =>
-        setTimeout(resolve, 3000)
-      );
-
     }
 
+    console.log(`   Products found this scroll: ${newProducts.length}`);
+    console.log(`   TOTAL PRODUCTS: ${products.size}`);
 
-    // =====================================================
-    // SAVE
-    // =====================================================
+    /*
+     * Check if we're still finding new products
+     */
+    if (products.size === previousCount) {
+      unchangedCount++;
 
-    const products =
-      Array.from(
-        allProducts.values()
+      console.log(
+        `   ⚠️ No new products (${unchangedCount}/5)`
       );
+    } else {
+      unchangedCount = 0;
+      previousCount = products.size;
 
+      console.log("   ✓ New products found");
+    }
+
+    /*
+     * Stop if nothing new for 5 consecutive scrolls
+     */
+    if (unchangedCount >= 5) {
+      console.log("");
+      console.log(
+        "🛑 No new products for 5 consecutive scrolls."
+      );
+      console.log("   Assuming we've reached the end.");
+      break;
+    }
+
+    /*
+     * Scroll to bottom
+     */
+    const scrollInfo = await page.evaluate(() => {
+      const oldHeight = document.body.scrollHeight;
+
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: "instant",
+      });
+
+      return {
+        oldHeight,
+        scrollY: window.scrollY,
+        height: document.body.scrollHeight,
+      };
+    });
 
     console.log(
-      "\n================================"
+      `   Page height: ${scrollInfo.height}px`
     );
 
-    console.log(
-      `TOTAL PRODUCTS: ${products.length}`
+    /*
+     * Wait for lazy-loaded products
+     */
+    await new Promise((resolve) =>
+      setTimeout(resolve, WAIT_AFTER_SCROLL)
     );
-
-    console.log(
-      "================================\n"
-    );
-
-
-    fs.writeFileSync(
-      "scraper/sm-products.json",
-      JSON.stringify(
-        products,
-        null,
-        2
-      )
-    );
-
-
-    console.log(
-      "Saved:"
-    );
-
-    console.log(
-      "scraper/sm-products.json"
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      "\nSCRAPER FAILED:"
-    );
-
-    console.error(
-      error.message
-    );
-
-  } finally {
-
-    await browser.close();
-
   }
 
+  /*
+   * Maximum scroll reached
+   */
+  if (scrollNumber >= MAX_SCROLLS) {
+    console.log("");
+    console.log(
+      `⚠️ Reached maximum scroll limit of ${MAX_SCROLLS}.`
+    );
+  }
+
+  /*
+   * Convert Map to array
+   */
+  const productArray = Array.from(products.values());
+
+  console.log("");
+  console.log("========================================");
+  console.log("SCRAPING COMPLETE");
+  console.log("========================================");
+  console.log(`SCROLLS USED: ${scrollNumber}`);
+  console.log(`TOTAL PRODUCTS: ${productArray.length}`);
+
+  /*
+   * Save output
+   */
+  const outputPath = path.join(
+    __dirname,
+    "sm-products.json"
+  );
+
+  fs.writeFileSync(
+    outputPath,
+    JSON.stringify(productArray, null, 2),
+    "utf8"
+  );
+
+  console.log(`✓ Saved: ${outputPath}`);
+
+  await browser.close();
+
+  console.log("✓ Chrome closed");
+  console.log("========================================");
 }
 
-scrapeSM();
+scrapeSM().catch((error) => {
+  console.error("");
+  console.error("========================================");
+  console.error("❌ SM SCRAPER FAILED");
+  console.error("========================================");
+  console.error(error);
+
+  process.exit(1);
+});
