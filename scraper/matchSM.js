@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const ws = require("ws");
 const { createClient } = require("@supabase/supabase-js");
 
 require("dotenv").config({
@@ -18,7 +19,7 @@ const supabaseKey =
   process.env.SUPABASE_KEY ||
   process.env.REACT_APP_SUPABASE_ANON_KEY;
 
-// Check environment variables before creating Supabase client
+// Check environment variables
 if (!supabaseUrl) {
   console.error("ERROR: SUPABASE_URL is not set.");
   console.error(
@@ -35,9 +36,16 @@ if (!supabaseKey) {
   process.exit(1);
 }
 
+// Create Supabase client
+// WebSocket transport is required for Node.js 20
 const supabase = createClient(
   supabaseUrl,
-  supabaseKey
+  supabaseKey,
+  {
+    realtime: {
+      transport: ws,
+    },
+  }
 );
 
 // ==========================================
@@ -56,6 +64,10 @@ const products = JSON.parse(
   )
 );
 
+// ==========================================
+// NORMALIZE TEXT
+// ==========================================
+
 function normalize(text) {
   return text
     .toLowerCase()
@@ -63,6 +75,10 @@ function normalize(text) {
     .replace(/\s+/g, " ")
     .trim();
 }
+
+// ==========================================
+// MAIN FUNCTION
+// ==========================================
 
 async function run() {
 
@@ -84,9 +100,10 @@ async function run() {
   if (error) {
 
     console.error(
-      "Failed to load ingredients:",
-      error
+      "Failed to load ingredients:"
     );
+
+    console.error(error);
 
     process.exit(1);
   }
@@ -96,7 +113,7 @@ async function run() {
   );
 
   // ==========================================
-  // MATCH
+  // MATCH PRODUCTS TO INGREDIENTS
   // ==========================================
 
   const matched = [];
@@ -121,11 +138,14 @@ async function run() {
       ) {
 
         match = ingredient;
+
         break;
-
       }
-
     }
+
+    // ========================================
+    // MATCHED
+    // ========================================
 
     if (match) {
 
@@ -141,12 +161,17 @@ async function run() {
 
       });
 
-    } else {
+    }
+
+    // ========================================
+    // UNMATCHED
+    // ========================================
+
+    else {
 
       unmatched.push(product);
 
     }
-
   }
 
   // ==========================================
@@ -210,9 +235,19 @@ async function run() {
   // ==========================================
 
   console.log("\nSaved:");
-  console.log(matchedPath);
-  console.log(unmatchedPath);
+
+  console.log(
+    matchedPath
+  );
+
+  console.log(
+    unmatchedPath
+  );
 }
+
+// ==========================================
+// RUN
+// ==========================================
 
 run().catch((error) => {
 
