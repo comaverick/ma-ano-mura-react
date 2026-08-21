@@ -1,6 +1,8 @@
 name: Daily DA and SM Scraper
 
 on:
+  schedule:
+      - cron: "0 16 * * *"
   workflow_dispatch:
 
 jobs:
