@@ -92,6 +92,9 @@ function round(value) {
 
 async function main() {
 
+  const dryRun = process.argv.includes("--dry-run");
+  const replaceToday = process.argv.includes("--replace-today");
+
   console.log(
     `Loaded ${products.length} SM best prices.`
   );
@@ -104,8 +107,12 @@ async function main() {
     `Source: ${SOURCE}`
   );
 
+  if (replaceToday) {
+    console.log("Mode: replace today's SM prices");
+  }
+
   // ========================================
-  // LOAD PANTRY INGREDIENTS
+  // LOAD ALL INGREDIENTS
   // ========================================
 
   const {
@@ -113,15 +120,14 @@ async function main() {
     error: ingredientError,
   } = await supabase
     .from("ingredients")
-    .select("id, name, unit")
-    .eq("category", "Pantry");
+    .select("id, name, unit, category");
 
   if (ingredientError) {
     throw ingredientError;
   }
 
   console.log(
-    `Loaded ${ingredients.length} Pantry ingredients.\n`
+    `Loaded ${ingredients.length} ingredients.\n`
   );
 
   // ========================================
@@ -131,9 +137,16 @@ async function main() {
   const ingredientMap = new Map(
     ingredients.map(
       (ingredient) => [
-        ingredient.name
-          .toLowerCase()
-          .trim(),
+        ingredient.id,
+        ingredient,
+      ]
+    )
+  );
+
+  const ingredientNameMap = new Map(
+    ingredients.map(
+      (ingredient) => [
+        ingredient.name.toLowerCase().trim(),
         ingredient,
       ]
     )
@@ -157,10 +170,9 @@ async function main() {
     }
 
     const ingredient =
-      ingredientMap.get(
-        product.ingredient
-          .toLowerCase()
-          .trim()
+      ingredientMap.get(product.ingredient_id) ||
+      ingredientNameMap.get(
+        product.ingredient.toLowerCase().trim()
       );
 
     if (!ingredient) {
@@ -260,6 +272,16 @@ async function main() {
 
         baseAmount =
           quantity;
+
+      }
+
+      else if (
+        packageUnit === "g" &&
+        ingredient.name.toLowerCase().includes("broth")
+      ) {
+
+        baseAmount =
+          quantity / 1000;
 
       }
 
@@ -367,11 +389,7 @@ async function main() {
   // DRY RUN
   // ========================================
 
-  if (
-    process.argv.includes(
-      "--dry-run"
-    )
-  ) {
+  if (dryRun) {
 
     console.log(
       "\nDRY RUN — NOTHING WAS INSERTED."
@@ -389,6 +407,21 @@ async function main() {
     );
 
     return;
+  }
+
+  if (replaceToday) {
+    const { error: deleteError } = await supabase
+      .from("prices")
+      .delete()
+      .eq("location_id", LOCATION_ID)
+      .eq("date", TODAY)
+      .eq("source", SOURCE);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+
+    console.log("Removed today's existing SM prices before replacement.");
   }
 
   // ========================================

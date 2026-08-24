@@ -43,9 +43,17 @@ const sortOptions = [
   { value: "worst", label: "Highest change" },
 ];
 
-const getPriceSummary = (ingredient) => {
+const priceSources = [
+  { value: "DA Pricewatch", label: "DA Pricewatch" },
+  { value: "SM Supermarkets", label: "SM Supermarket" },
+];
+
+const getPriceSource = (price) => price.source || "DA Pricewatch";
+
+const getPriceSummary = (ingredient, source) => {
   const prices = [...(ingredient.prices || [])]
     .filter((price) =>
+      getPriceSource(price) === source &&
       Number.isFinite(Number(price.avg_price)) &&
       Number.isFinite(new Date(price.date).getTime())
     )
@@ -94,10 +102,10 @@ const Prices = () => {
   const [category, setCategory] = useState("All");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("name");
+  const [source, setSource] = useState(priceSources[0].value);
   const [loading, setLoading] = useState(true);
   const [ingredients, setIngredients] = useState([]);
   const [error, setError] = useState("");
-  const [lastUpdated, setLastUpdated] = useState(null);
   const [isPending, startTransition] = useTransition();
   const deferredSearch = useDeferredValue(search);
 
@@ -118,7 +126,8 @@ const Prices = () => {
             avg_price,
             date,
             created_at,
-            location_id
+            location_id,
+            source
           )
         `);
 
@@ -127,20 +136,10 @@ const Prices = () => {
       }
 
       const nextIngredients = data || [];
-      const timestamps = nextIngredients.flatMap((ingredient) =>
-        (ingredient.prices || [])
-          .map((price) => new Date(price.date).getTime())
-          .filter((timestamp) => Number.isFinite(timestamp))
-      );
-
       setIngredients(nextIngredients);
-      setLastUpdated(
-        timestamps.length ? new Date(Math.max(...timestamps)) : null
-      );
     } catch (fetchError) {
       console.error("Error fetching ingredients:", fetchError);
       setIngredients([]);
-      setLastUpdated(null);
       setError("We could not load the latest ingredient prices. Please try again.");
     } finally {
       setLoading(false);
@@ -154,9 +153,19 @@ const Prices = () => {
   const preparedIngredients = useMemo(() => {
     return ingredients.map((ingredient) => ({
       ingredient,
-      summary: getPriceSummary(ingredient),
+      summary: getPriceSummary(ingredient, source),
     }));
-  }, [ingredients]);
+  }, [ingredients, source]);
+
+  const lastUpdated = useMemo(() => {
+    const timestamps = preparedIngredients.flatMap(({ summary }) =>
+      summary.prices
+        .map((price) => new Date(price.date).getTime())
+        .filter((timestamp) => Number.isFinite(timestamp))
+    );
+
+    return timestamps.length ? new Date(Math.max(...timestamps)) : null;
+  }, [preparedIngredients]);
 
   const filteredIngredients = useMemo(() => {
     const query = deferredSearch.trim().toLowerCase();
@@ -189,6 +198,7 @@ const Prices = () => {
   }, [category, deferredSearch, preparedIngredients, sortBy]);
 
   const hasFilters = Boolean(search.trim()) || category !== "All" || sortBy !== "name";
+  const selectedSourceLabel = priceSources.find((item) => item.value === source)?.label || source;
 
   const clearFilters = () => {
     setSearch("");
@@ -233,6 +243,23 @@ const Prices = () => {
             </div>
           </div>
 
+          <div className="source-filters" aria-label="Choose price source">
+            <span className="source-title">Price source</span>
+            <div className="source-switch" role="group">
+              {priceSources.map((item) => (
+                <button
+                  type="button"
+                  key={item.value}
+                  className={source === item.value ? "source-active" : ""}
+                  aria-pressed={source === item.value}
+                  onClick={() => startTransition(() => setSource(item.value))}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="category-filters" aria-label="Filter by category">
             {categories.map((item) => (
               <button
@@ -255,7 +282,7 @@ const Prices = () => {
                 : `${filteredIngredients.length} ingredient${filteredIngredients.length === 1 ? "" : "s"}`}
             </span>
             {lastUpdated && !loading && (
-              <span>Latest data: {formatDate(lastUpdated)}</span>
+              <span>{selectedSourceLabel}: {formatDate(lastUpdated)}</span>
             )}
           </div>
         </div>
@@ -294,7 +321,7 @@ const Prices = () => {
               image={Empty.PRESENTED_IMAGE_SIMPLE}
               description={hasFilters
                 ? "No ingredients match those filters."
-                : "No price data is available yet."}
+                : `No ${selectedSourceLabel} data is available yet.`}
             />
             {hasFilters && (
               <Button onClick={clearFilters}>Clear filters</Button>

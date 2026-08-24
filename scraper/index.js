@@ -32,6 +32,8 @@ const supabase =
 
   );
 
+const SOURCE = "DA Pricewatch";
+
 async function getPrices() {
 
   try {
@@ -337,6 +339,11 @@ async function getPrices() {
               todayDate
             )
 
+            .eq(
+              "source",
+              SOURCE
+            )
+
             .maybeSingle();
 
           if (checkError) {
@@ -384,7 +391,10 @@ async function getPrices() {
                 ),
 
               date:
-                todayDate
+                todayDate,
+
+              source:
+                SOURCE
 
             });
 

@@ -81,6 +81,9 @@ for (
 
     ingredient,
 
+    ingredient_id:
+      cheapest.ingredient_id,
+
     price_per_100:
       cheapest.price_per_100,
 

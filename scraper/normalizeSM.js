@@ -64,16 +64,22 @@ function parsePackage(name) {
   // NORMAL SIZE
   // ---------------------------------------
 
-  const sizeMatch = text.match(
-    /(\d+(?:\.\d+)?)\s*(kg|g|ml|l|oz)\b/i
+  const fractionalSizeMatch = text.match(
+    /(\d+)\s*\/\s*(\d+)\s*(kg|g|ml|l|oz)\b/i
+  );
+
+  const sizeMatch = fractionalSizeMatch || text.match(
+    /(?<![\d/])(\d+(?:\.\d+)?)\s*(kg|g|ml|l|oz)\b/i
   );
 
   if (!sizeMatch) {
     return null;
   }
 
-  let quantity = Number(sizeMatch[1]);
-  let unit = sizeMatch[2].toLowerCase();
+  let quantity = fractionalSizeMatch
+    ? Number(sizeMatch[1]) / Number(sizeMatch[2])
+    : Number(sizeMatch[1]);
+  let unit = (fractionalSizeMatch ? sizeMatch[3] : sizeMatch[2]).toLowerCase();
 
   if (unit === "kg") {
     quantity *= 1000;
@@ -102,7 +108,13 @@ function parsePackage(name) {
 
   if (piecesMatch) {
     pieces = Number(piecesMatch[1]);
-    quantity *= pieces;
+
+    // A large package size is normally the total package weight (for
+    // example, 1kg 60pcs or 230g 20pcs). Small sachet sizes are commonly
+    // per-piece weights (for example, 8g 16pcs), so only multiply those.
+    if (quantity <= 100) {
+      quantity *= pieces;
+    }
   }
 
   return {
