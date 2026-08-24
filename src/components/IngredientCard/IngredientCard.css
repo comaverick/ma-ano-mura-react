@@ -1,43 +1,81 @@
 .ingredient-card {
-    border-radius: 16px;
-    overflow: hidden;
     width: 100%;
-    height: 280px;
-    transition: all 0.4s ease;
+    min-height: 300px;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 16px;
     cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
-.ingredient-card:hover {
-    transform: translateY(-8px);
-    border-color: #22c55e;
-    box-shadow: 0 16px 40px rgba(34, 197, 94, 0.15);
+
+.ingredient-card:focus-visible {
+    outline: 3px solid rgba(40, 161, 90, 0.28);
+    outline-offset: 3px;
 }
+
+.ingredient-card .ant-card-body {
+    height: 100%;
+    padding: 18px;
+}
+
+@media (hover: hover) {
+    .ingredient-card:hover {
+        border-color: #86efac;
+        box-shadow: 0 10px 24px rgba(22, 101, 52, 0.10);
+        transform: translateY(-3px);
+    }
+}
+
 .ingredient-skeleton {
     width: 100%;
-    height: 280px;
-    border-radius: 16px;
-    border: 1px solid #e5e7eb;
-    background: white;
+    min-height: 300px;
     box-sizing: border-box;
     padding: 18px;
-}   
-.ingredient-image {
-    height: 180px;
-    object-fit: cover;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    background: #ffffff;
+}
+
+.ingredient-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+}
+
+.ingredient-tag {
+    align-self: flex-start;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border: 1px solid #bbf7d0;
+    border-radius: 999px;
+    padding: 4px 9px;
+    background: #f0fdf4;
+    color: #166534;
+    font-size: 11px;
+    font-weight: 600;
 }
 
 .ingredient-card h3 {
-    margin: 8px 0 0px;
-    font-size: 14px;
+    min-height: 38px;
+    margin: 14px 0 6px;
+    color: #1f2937;
+    font-size: 15px;
+    line-height: 1.35;
 }
 
 .ingredient-card h2 {
-    margin: 0;
-    color: #15803d;
-    font-size: 22px;
-
     display: flex;
     align-items: baseline;
+    flex-wrap: wrap;
+    gap: 3px;
     min-width: 0;
+    margin: 0 0 12px;
+    color: #15803d;
+    font-size: 21px;
+    line-height: 1.2;
 }
 
 .ingredient-card h2 span {
@@ -45,40 +83,329 @@
     font-size: 12px;
     font-weight: 400;
 }
+
 .price-unit {
-    white-space: nowrap;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
 }
+
 .ingredient-history {
     display: flex;
     justify-content: space-between;
+    gap: 8px;
     margin-bottom: 6px;
     color: #6b7280;
+    font-size: 12px;
+}
+
+.ingredient-history span:last-child {
+    color: #374151;
+    font-weight: 600;
+    text-align: right;
 }
 
 .ingredient-chart {
-    height: 70px;
-    background: #f5f5f5;
-    border-radius: 10px;
-    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    height: 72px;
+    margin-top: auto;
     overflow: hidden;
+    border-radius: 10px;
     outline: none;
+    background: #f5f5f5;
+    color: #15803d;
 }
+
+.ingredient-sparkline {
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 18px 10px 12px;
+    box-sizing: border-box;
+}
+
+.chart-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #9ca3af;
+    font-size: 11px;
+}
+
+.ingredient-updated {
+    display: block;
+    margin-top: 8px;
+    color: #9ca3af;
+    font-size: 11px;
+}
+
+.ingredient-card-action {
+    display: block;
+    margin-top: 8px;
+    color: #15803d;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.price-up,
+.price-down,
+.price-same {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 18px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
 .price-up {
     color: #dc2626;
-    font-weight: 500;
-    font-size: 12px;
 }
 
 .price-down {
     color: #16a34a;
-    font-weight: 500;
-    font-size: 12px;
 }
 
 .price-same {
     color: #6b7280;
-    font-weight: 500;
+}
+
+.ingredient-detail-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ingredient-detail-title small {
+    border-radius: 999px;
+    padding: 4px 8px;
+    background: #f0fdf4;
+    color: #166534;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.ingredient-detail-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.ingredient-detail-summary > div,
+.ingredient-detail-metrics > div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #fbfdfb;
+}
+
+.ingredient-detail-summary span,
+.ingredient-detail-metrics span {
+    color: #6b7280;
     font-size: 12px;
+}
+
+.ingredient-detail-summary strong {
+    color: #15803d;
+    font-size: 22px;
+}
+
+.ingredient-detail-summary small {
+    color: #6b7280;
+    font-size: 11px;
+}
+
+.ingredient-detail-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.ingredient-detail-metrics strong {
+    color: #1f2937;
+    font-size: 15px;
+}
+
+.ingredient-detail-chart-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 4px 0 8px;
+}
+
+.ingredient-detail-chart-heading h3 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 15px;
+}
+
+.ingredient-detail-chart-heading span {
+    display: block;
+    margin-top: 3px;
+    color: #6b7280;
+    font-size: 11px;
+}
+
+.ingredient-detail-chart-heading strong {
+    flex-shrink: 0;
+    color: #15803d;
+    font-size: 12px;
+}
+
+.ingredient-detail-chart {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    height: 180px;
+    padding: 12px 12px 10px 0;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #f5f5f5;
+    color: #15803d;
+}
+
+.chart-y-axis {
+    display: flex;
+    flex: 0 0 48px;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 1px 0 1px 8px;
+    color: #6b7280;
+    font-size: 10px;
+    line-height: 1;
+    text-align: right;
+}
+
+.ingredient-detail-plot {
+    flex: 1;
+    min-width: 0;
+}
+
+.ingredient-detail-sparkline {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.ingredient-detail-plot circle {
+    cursor: help;
+}
+
+.ingredient-chart-range {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 6px 2px 18px 56px;
+    color: #9ca3af;
+    font-size: 10px;
+}
+
+.ingredient-detail-trend {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 0 0 16px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.ingredient-detail-trend.trend-up {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.ingredient-detail-trend.trend-down {
+    background: #f0fdf4;
+    color: #15803d;
+}
+
+.ingredient-detail-trend.trend-same {
+    background: #f9fafb;
+    color: #6b7280;
+}
+
+.ingredient-detail-divider {
+    height: 1px;
+    margin-bottom: 16px;
+    background: #eef0ed;
+}
+
+.ingredient-history-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.ingredient-history-heading h3 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 15px;
+}
+
+.ingredient-history-heading span {
+    color: #9ca3af;
+    font-size: 11px;
+}
+
+.ingredient-history-list {
+    max-height: 220px;
+    overflow-y: auto;
+    border-top: 1px solid #eef0ed;
+}
+
+.ingredient-history-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #eef0ed;
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.ingredient-history-row strong {
+    color: #1f2937;
+    font-size: 13px;
+}
+
+.ingredient-history-empty {
+    margin: 0;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+@media (max-width: 520px) {
+    .ingredient-detail-summary,
+    .ingredient-detail-metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .ingredient-detail-chart {
+        height: 120px;
+    }
+
+    .ingredient-detail-chart-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .ingredient-detail-chart-heading strong {
+        font-size: 11px;
+    }
 }

@@ -1,7 +1,8 @@
 .price-hero {
     width: 100%;
-    padding: 60px 20px;
+    padding: 64px 20px 56px;
     background: #f8fffa;
+    border-bottom: 1px solid #e5efe7;
 }
 
 .price-hero-container {
@@ -26,9 +27,11 @@
 
 .price-header h1 {
     margin: 0;
-    font-size: 42px;
+    font-size: clamp(32px, 5vw, 42px);
+    line-height: 1.1;
     font-weight: 700;
     color: #111827;
+    text-align: center;
 }
 
 .price-header p {
@@ -36,4 +39,19 @@
     margin: 0;
     text-align: center;
     color: #6b7280;
+    line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+    .price-hero {
+        padding: 48px 16px 42px;
+    }
+
+    .price-header {
+        gap: 16px;
+    }
+
+    .price-badge {
+        font-size: 12px;
+    }
 }
