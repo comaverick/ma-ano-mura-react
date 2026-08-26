@@ -17,8 +17,10 @@ import {
 import { supabase } from "../supabaseClient";
 import {
   PRICE_SOURCES,
+  buildRecipeIngredientRows,
   calculateRecipeCost,
 } from "../utils/recipeCost";
+import recipeIngredientData from "../data/recipeIngredients.json";
 import "./Recipes.css";
 
 const currencyFormatter = new Intl.NumberFormat("en-PH", {
@@ -200,6 +202,14 @@ const Recipes = () => {
   const selectedRecipe = recipeDetail || recipes.find(
     (recipe) => recipe.id === selectedRecipeId
   );
+  const rawRecipeIngredients = useMemo(
+    () => recipeIngredientData.recipes?.[selectedRecipe?.name] || [],
+    [selectedRecipe?.name]
+  );
+  const ingredientDisplay = useMemo(
+    () => buildRecipeIngredientRows(rawRecipeIngredients, costData),
+    [rawRecipeIngredients, costData]
+  );
   const selectedSourceLabel = PRICE_SOURCES.find(
     (item) => item.value === source
   )?.label || source;
@@ -207,9 +217,13 @@ const Recipes = () => {
     .split(/\s*\|\s*/)
     .map((step) => step.trim())
     .filter(Boolean);
-  const pricedPercentage = costData.ingredients.length > 0
-    ? Math.round((costData.pricedIngredients.length / costData.ingredients.length) * 100)
+  const pricedPercentage = ingredientDisplay.sourceCount > 0
+    ? Math.round((ingredientDisplay.coveredSourceCount / ingredientDisplay.sourceCount) * 100)
     : 0;
+  const hasPricedIngredients = costData.pricedIngredients.length > 0;
+  const missingDisplayRows = ingredientDisplay.rows.filter((item) =>
+    ["missing", "not-catalog"].includes(item.displayStatus)
+  );
 
   return (
     <main className="recipes-page">
@@ -329,11 +343,13 @@ const Recipes = () => {
 
                 <div className="recipe-total-card">
                   <span>Estimated total</span>
-                  <strong>{formatCurrency(costData.total)}</strong>
+                  <strong>{hasPricedIngredients ? formatCurrency(costData.total) : "—"}</strong>
                   <small>
-                    {selectedRecipe.servings && costData.total > 0
+                    {selectedRecipe.servings && hasPricedIngredients
                       ? `${formatCurrency(costData.total / Number(selectedRecipe.servings))} per serving`
-                      : "Based on available prices"}
+                      : hasPricedIngredients
+                        ? "Based on available prices"
+                        : "Price data unavailable"}
                   </small>
                 </div>
               </header>
@@ -358,22 +374,26 @@ const Recipes = () => {
                   <div className="recipe-coverage-card">
                     <div>
                       <strong>{pricedPercentage}%</strong>
-                      <span>of linked ingredients priced</span>
+                      <span>
+                        {ingredientDisplay.hasRawIngredients
+                          ? "of recipe ingredients covered"
+                          : "of linked ingredients priced"}
+                      </span>
                     </div>
                     <span>
-                      {costData.pricedIngredients.length} of {costData.ingredients.length} ingredients included
+                      {ingredientDisplay.coveredSourceCount} of {ingredientDisplay.sourceCount} ingredients included
                     </span>
                   </div>
 
-                  {costData.missingIngredients.length > 0 && (
+                  {missingDisplayRows.length > 0 && (
                     <Alert
                       className="recipe-warning"
                       type="warning"
                       showIcon
                       icon={<WarningOutlined />}
-                      message={`${costData.missingIngredients.length} ingredient${costData.missingIngredients.length === 1 ? "" : "s"} not included in the total`}
-                      description={costData.missingIngredients
-                        .map((item) => item.ingredient.name)
+                      message={`${missingDisplayRows.length} ingredient${missingDisplayRows.length === 1 ? "" : "s"} not included in the total`}
+                      description={missingDisplayRows
+                        .map((item) => item.rawName || item.ingredient.name)
                         .filter(Boolean)
                         .join(", ")}
                     />
@@ -389,32 +409,70 @@ const Recipes = () => {
                     </div>
 
                     <div className="recipe-ingredients-table">
-                      {costData.ingredients.map((item) => {
-                        const conversionNote = item.conversion.estimated
+                      {ingredientDisplay.rows.map((item) => {
+                        const conversionNote = item.conversion?.estimated
                           ? "Approximate conversion"
-                          : item.conversion.reason;
+                          : item.conversion?.reason;
+                        const priceOrigin = item.price
+                          ? item.price.source || "DA Pricewatch"
+                          : "";
+                        const ingredientName = item.isRawSource
+                          ? item.rawName
+                          : item.ingredient.name;
+                        const matchedName = item.isRawSource && item.matchedIngredientName
+                          ? `Matched to ${item.matchedIngredientName}`
+                          : item.original_name && item.original_name !== item.ingredient.name
+                            ? item.original_name
+                            : "";
+                        const statusLabel = item.displayStatus === "not-catalog"
+                          ? "Not in catalog"
+                          : item.displayStatus === "combined"
+                            ? "Included"
+                            : item.cost !== null
+                              ? "Priced"
+                              : "Price unavailable";
+                        const priceNote = [
+                          source === "best" ? priceOrigin : "",
+                          item.isCombined ? "Combined with another recipe line" : "",
+                          conversionNote,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ");
 
                         return (
                           <div className="recipe-ingredient-row" key={item.id}>
                             <span className="recipe-ingredient-quantity">
-                              {formatQuantity(item.quantity, item.unit)}
+                              {item.isRawSource
+                                ? "Recipe amount"
+                                : formatQuantity(item.quantity, item.unit)}
                             </span>
                             <div className="recipe-ingredient-name">
-                              <strong>{item.ingredient.name}</strong>
-                              {item.original_name && item.original_name !== item.ingredient.name && (
-                                <small>{item.original_name}</small>
-                              )}
+                              <strong>{ingredientName}</strong>
+                              {matchedName && <small>{matchedName}</small>}
                             </div>
                             <div className="recipe-ingredient-price">
-                              {item.cost !== null ? (
+                              {item.displayStatus === "combined" ? (
+                                <>
+                                  <strong className="recipe-price-included">Included</strong>
+                                  <small>{priceNote || "Combined recipe amount"}</small>
+                                </>
+                              ) : item.cost !== null ? (
                                 <>
                                   <strong>{formatCurrency(item.cost)}</strong>
-                                  {conversionNote && <small>{conversionNote}</small>}
+                                  <span className="recipe-status recipe-status-priced">{statusLabel}</span>
+                                  {priceNote && <small>{priceNote}</small>}
                                 </>
                               ) : (
                                 <>
                                   <strong className="recipe-price-missing">Not priced</strong>
-                                  <small>{item.price ? conversionNote : `No ${selectedSourceLabel} price`}</small>
+                                  <span className={`recipe-status recipe-status-${item.displayStatus}`}>{statusLabel}</span>
+                                  <small>
+                                    {item.displayStatus === "not-catalog"
+                                      ? "Not yet in ingredient catalog"
+                                      : item.price
+                                        ? priceNote || "Unit needs review"
+                                        : `No ${selectedSourceLabel} price`}
+                                  </small>
                                 </>
                               )}
                             </div>

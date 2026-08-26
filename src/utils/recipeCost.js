@@ -43,12 +43,14 @@ const UNIT_ALIASES = {
 };
 
 const PRICE_SOURCES = [
+  { value: "best", label: "Best available" },
   { value: "DA Pricewatch", label: "DA Pricewatch" },
   { value: "SM Supermarkets", label: "SM Supermarket" },
 ];
 
 const PIECE_WEIGHTS_KG = [
   { names: ["garlic"], weight: 0.003 },
+  { names: ["habichuelas", "string bean", "green bean", "sitao"], weight: 0.01 },
   { names: ["white onion", "red onion", "shallot"], weight: 0.12 },
   { names: ["tomato"], weight: 0.1 },
   { names: ["carrot"], weight: 0.08 },
@@ -67,6 +69,13 @@ const normalize = (value) =>
   String(value || "")
     .toLowerCase()
     .replace(/[(),./-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const normalizeIngredientText = (value) =>
+  String(value || "")
+    .toLowerCase()
+    .replace(/[()[\],./-]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -185,12 +194,15 @@ const convertRecipeQuantity = ({ quantity, recipeUnit, ingredient }) => {
     };
   }
 
-  if (catalogUnit === "piece" && normalizedRecipeUnit === "piece") {
+  if (
+    catalogUnit === "piece" &&
+    ["piece", "thumb", "clove", "bunch"].includes(normalizedRecipeUnit)
+  ) {
     return {
       amount: numericQuantity,
       baseUnit: "piece",
-      estimated: false,
-      reason: "",
+      estimated: normalizedRecipeUnit !== "piece",
+      reason: normalizedRecipeUnit === "piece" ? "" : "Uses the catalog piece price",
     };
   }
 
@@ -205,7 +217,7 @@ const convertRecipeQuantity = ({ quantity, recipeUnit, ingredient }) => {
 const getLatestPrice = (ingredient, source) => {
   const prices = (ingredient?.prices || [])
     .filter((price) =>
-      (price.source || "DA Pricewatch") === source &&
+      (source === "best" || (price.source || "DA Pricewatch") === source) &&
       Number.isFinite(Number(price.avg_price)) &&
       Number.isFinite(new Date(price.date).getTime())
     )
@@ -250,11 +262,138 @@ const calculateRecipeCost = (links, source) => {
   };
 };
 
+const getSourceIngredientMatchScore = (sourceName, item) => {
+  const sourceText = normalizeIngredientText(sourceName);
+  const originalText = normalizeIngredientText(item.original_name);
+  const ingredientText = normalizeIngredientText(item.ingredient?.name);
+
+  if (!sourceText) {
+    return 0;
+  }
+
+  if (sourceText === originalText || sourceText === ingredientText) {
+    return 100;
+  }
+
+  if (
+    (originalText && sourceText.includes(originalText)) ||
+    (originalText && originalText.includes(sourceText))
+  ) {
+    return 85;
+  }
+
+  if (ingredientText && sourceText.includes(ingredientText)) {
+    return 70;
+  }
+
+  const ingredientTokens = ingredientText
+    .split(" ")
+    .filter((token) => token.length > 2);
+  const matchingTokens = ingredientTokens.filter((token) =>
+    sourceText.split(" ").includes(token)
+  );
+
+  return ingredientTokens.length > 0 && matchingTokens.length === ingredientTokens.length
+    ? 45
+    : 0;
+};
+
+const buildRecipeIngredientRows = (sourceIngredients, costData) => {
+  const linkedIngredients = costData?.ingredients || [];
+  const rawIngredients = Array.isArray(sourceIngredients)
+    ? sourceIngredients.filter(Boolean)
+    : [];
+
+  if (rawIngredients.length === 0) {
+    return {
+      rows: linkedIngredients.map((item) => ({
+        ...item,
+        isRawSource: false,
+        displayStatus: item.cost !== null ? "priced" : "missing",
+      })),
+      hasRawIngredients: false,
+      sourceCount: linkedIngredients.length,
+      coveredSourceCount: costData?.pricedIngredients?.length || 0,
+      missingSourceRows: costData?.missingIngredients || [],
+    };
+  }
+
+  const usedLinkIds = new Set();
+  const sourceRows = rawIngredients.map((rawName, index) => {
+    const candidates = linkedIngredients
+      .map((item) => ({
+        item,
+        score: getSourceIngredientMatchScore(rawName, item),
+        used: usedLinkIds.has(item.id),
+      }))
+      .filter((candidate) => candidate.score > 0)
+      .sort((a, b) =>
+        b.score - a.score || Number(a.used) - Number(b.used)
+      );
+    const match = candidates[0];
+
+    if (!match || match.score < 40) {
+      return {
+        id: `raw-${index}`,
+        rawName,
+        isRawSource: true,
+        displayStatus: "not-catalog",
+        ingredient: { name: rawName, unit: null, prices: [] },
+        cost: null,
+        price: null,
+        conversion: { estimated: false, reason: "Not yet in ingredient catalog" },
+      };
+    }
+
+    usedLinkIds.add(match.item.id);
+    const isCombined = match.used;
+
+    return {
+      ...match.item,
+      id: `raw-${index}`,
+      rawName,
+      matchedIngredientName: match.item.ingredient.name,
+      isRawSource: true,
+      isCombined,
+      displayStatus: isCombined
+        ? "combined"
+        : match.item.cost !== null
+          ? "priced"
+          : "missing",
+      cost: isCombined ? null : match.item.cost,
+    };
+  });
+
+  const extraLinkedRows = linkedIngredients
+    .filter((item) => !usedLinkIds.has(item.id))
+    .map((item) => ({
+      ...item,
+      isRawSource: false,
+      displayStatus: item.cost !== null ? "priced" : "missing",
+    }));
+  const rows = [...sourceRows, ...extraLinkedRows];
+  const missingSourceRows = sourceRows.filter(
+    (item) => !["priced", "combined"].includes(item.displayStatus)
+  );
+
+  return {
+    rows,
+    hasRawIngredients: true,
+    sourceCount: rawIngredients.length,
+    coveredSourceCount: sourceRows.filter((item) =>
+      ["priced", "combined"].includes(item.displayStatus)
+    ).length,
+    missingSourceRows,
+  };
+};
+
 export {
   PRICE_SOURCES,
+  buildRecipeIngredientRows,
   calculateRecipeCost,
   convertRecipeQuantity,
   getLatestPrice,
+  normalizeIngredientText,
   normalizeCatalogUnit,
   normalizeRecipeUnit,
 };

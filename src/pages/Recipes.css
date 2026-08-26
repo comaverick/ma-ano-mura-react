@@ -381,6 +381,37 @@
   font-size: 15px;
 }
 
+.recipe-status {
+  display: inline-block;
+  margin-top: 5px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.recipe-status-priced {
+  background: #e8f6eb;
+  color: #277747;
+}
+
+.recipe-status-missing {
+  background: #fff3df;
+  color: #a56e32;
+}
+
+.recipe-status-not-catalog {
+  background: #f0f2f1;
+  color: #718078;
+}
+
+.recipe-price-included {
+  color: #5d8068 !important;
+  font-size: 12px !important;
+}
+
 .recipe-price-missing {
   color: #a56e32 !important;
   font-size: 12px !important;

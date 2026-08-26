@@ -414,14 +414,13 @@ async function main() {
       .from("prices")
       .delete()
       .eq("location_id", LOCATION_ID)
-      .eq("date", TODAY)
-      .eq("source", SOURCE);
+      .eq("date", TODAY);
 
     if (deleteError) {
       throw deleteError;
     }
 
-    console.log("Removed today's existing SM prices before replacement.");
+    console.log("Removed today's existing prices for this location before replacement.");
   }
 
   // ========================================
@@ -441,10 +440,6 @@ async function main() {
     .eq(
       "date",
       TODAY
-    )
-    .eq(
-      "source",
-      SOURCE
     );
 
   if (existingError) {
@@ -472,7 +467,7 @@ async function main() {
     );
 
   console.log(
-    `Existing SM prices today: ${existingIds.size}`
+    `Existing prices today at this location: ${existingIds.size}`
   );
 
   console.log(
@@ -495,18 +490,32 @@ async function main() {
   // ========================================
 
   const {
+    data: insertedRows,
     error: insertError,
   } = await supabase
     .from("prices")
-    .insert(newRows);
+    .upsert(
+      newRows,
+      {
+        onConflict: "ingredient_id,location_id,date",
+        ignoreDuplicates: true,
+      }
+    )
+    .select("ingredient_id");
 
   if (insertError) {
     throw insertError;
   }
 
   console.log(
-    `\n✓ Successfully inserted ${newRows.length} SM price rows.`
+    `\n✓ Successfully inserted ${insertedRows.length} SM price rows.`
   );
+
+  if (insertedRows.length < newRows.length) {
+    console.log(
+      `Skipped ${newRows.length - insertedRows.length} rows that already existed.`
+    );
+  }
 }
 
 // ==========================================
