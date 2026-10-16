@@ -1,17 +1,17 @@
 {
   "name": "scraper",
   "version": "1.0.0",
-  "description": "",
+  "description": "Daily NCR ingredient prices and recipe coverage audits",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test test/*.test.js",
     "sm:scrape": "node scrapeSM.js",
     "sm:filter": "node filterSM.js",
-    "sm:match": "node matchSM.js",
-    "sm:normalize": "node normalizeSM.js",
-    "sm:best": "node getBestSMPrices.js",
+    "sm:match": "node previewSM.js",
+    "sm:normalize": "node previewSM.js",
+    "sm:best": "node previewSM.js",
     "sm:insert": "node insertSMPrices.js",
-    "sm:insert:replace": "node insertSMPrices.js --replace-today",
+    "sm:insert:replace": "node insertSMPrices.js",
     "ingredients:add": "node addRecipeIngredients.js",
     "ingredients:add:dry-run": "node addRecipeIngredients.js --dry-run",
     "recipes:link": "node linkRecipeIngredients.js",
@@ -21,7 +21,10 @@
     "recipes:sync": "node syncRecipes.js",
     "recipes:sync:dry-run": "node syncRecipes.js --dry-run",
     "recipes:ingredients:export": "node exportRecipeIngredients.js",
-    "sm:all": "npm run sm:scrape && npm run sm:filter && npm run sm:match && npm run sm:normalize && npm run sm:best && npm run sm:insert:replace"
+    "sm:all": "node scrapeSM.js && node insertSMPrices.js",
+    "daily": "node runDaily.js",
+    "daily:dry-run": "node runDaily.js --dry-run",
+    "coverage": "node auditCoverage.js"
   },
   "keywords": [],
   "author": "",
@@ -34,6 +37,10 @@
     "dotenv": "^17.4.2",
     "node-cron": "^4.2.1",
     "puppeteer": "^24.42.0",
+    "undici": "^7.30.1",
     "ws": "^8.20.0"
+  },
+  "engines": {
+    "node": ">=22.12"
   }
 }

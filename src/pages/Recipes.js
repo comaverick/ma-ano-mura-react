@@ -1,517 +1,470 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useDeferredValue } from "react";
+import { useSearchParams, Link } from "react-router-dom";
+import { Alert, Skeleton } from "antd";
 import {
-  Alert,
-  Empty,
-  Input,
-  Skeleton,
-} from "antd";
-import {
-  ArrowLeftOutlined,
-  CalculatorOutlined,
-  ClockCircleOutlined,
   SearchOutlined,
-  ShopOutlined,
+  ClockCircleOutlined,
   TeamOutlined,
-  WarningOutlined,
+  ArrowRightOutlined,
+  CheckOutlined,
+  InfoCircleOutlined,
 } from "@ant-design/icons";
-import { supabase } from "../supabaseClient";
+import { useMarket } from "../context/MarketContext";
+import { loadLinkedRecipe } from "../services/marketData";
+import domainCosting from "../domain/costing.js";
 import {
-  PRICE_SOURCES,
-  buildRecipeIngredientRows,
-  calculateRecipeCost,
-} from "../utils/recipeCost";
-import recipeIngredientData from "../data/recipeIngredients.json";
+  formatMoney,
+  formatTime,
+  formatDate,
+  formatQuantity,
+  isStale,
+} from "../utils/format";
 import "./Recipes.css";
-
-const currencyFormatter = new Intl.NumberFormat("en-PH", {
-  style: "currency",
-  currency: "PHP",
-  maximumFractionDigits: 2,
-});
-
-const numberFormatter = new Intl.NumberFormat("en-PH", {
-  maximumFractionDigits: 2,
-});
-
-const formatCurrency = (value) => currencyFormatter.format(Number(value || 0));
-
-const formatQuantity = (quantity, unit) => {
-  if (quantity === null || quantity === undefined || !unit) {
-    return "Amount unavailable";
-  }
-
-  return `${numberFormatter.format(Number(quantity))} ${unit}`;
+const { priceRecipe, PRICE_SOURCES } = domainCosting;
+const statusLabels = {
+  unmatched: "Ingredient not matched",
+  "no-price": "No source quote",
+  quantity: "Quantity needs review",
+  "to-taste": "To taste · excluded",
+  water: "Water · excluded",
+  priced: "Included",
 };
-
-const formatRecipeTime = (recipe) => {
-  if (recipe?.total_time) {
-    return recipe.total_time;
-  }
-
-  const parts = [recipe?.prep_time, recipe?.cook_time].filter(Boolean);
-  return parts.length ? parts.join(" + ") : "Time not listed";
-};
-
-const Recipes = () => {
-  const [recipes, setRecipes] = useState([]);
-  const [selectedRecipeId, setSelectedRecipeId] = useState(null);
-  const [recipeDetail, setRecipeDetail] = useState(null);
-  const [recipeLinks, setRecipeLinks] = useState([]);
-  const [source, setSource] = useState(PRICE_SOURCES[0].value);
-  const [search, setSearch] = useState("");
-  const [loadingRecipes, setLoadingRecipes] = useState(true);
-  const [loadingDetail, setLoadingDetail] = useState(false);
-  const [error, setError] = useState("");
+export default function Recipes() {
+  const {
+    recipes,
+    recipesLoading,
+    priceIndex,
+    ingredients,
+    loading,
+    error,
+    recipeError,
+    refresh,
+  } = useMarket();
+  const [params, setParams] = useSearchParams();
+  const query = params.get("q") || "";
+  const source = PRICE_SOURCES.some((s) => s.value === params.get("source"))
+    ? params.get("source")
+    : "best";
+  const deferred = useDeferredValue(query);
+  const [servings, setServings] = useState(null);
+  const [detailOverride, setDetailOverride] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
-
-  const loadRecipes = useCallback(async () => {
-    setLoadingRecipes(true);
-    setError("");
-
-    const { data, error: fetchError } = await supabase
-      .from("recipes")
-      .select("id, name, prep_time, cook_time, total_time, servings")
-      .order("name", { ascending: true });
-
-    if (fetchError) {
-      console.error("Error loading recipes:", fetchError);
-      setError("We could not load the recipe collection.");
-      setRecipes([]);
-    } else {
-      const nextRecipes = data || [];
-      setRecipes(nextRecipes);
-      setSelectedRecipeId((currentId) => currentId || nextRecipes[0]?.id || null);
-    }
-
-    setLoadingRecipes(false);
-  }, []);
-
+  const filtered = useMemo(
+    () =>
+      recipes.filter((recipe) =>
+        recipe.name.toLowerCase().includes(deferred.trim().toLowerCase()),
+      ),
+    [recipes, deferred],
+  );
+  const selected =
+    recipes.find((recipe) => recipe.id === params.get("recipe")) ||
+    (query
+      ? filtered[0]
+      : recipes.find((recipe) => /^chicken adobo$/i.test(recipe.name))) ||
+    filtered[0];
+  const selectedId = selected?.id;
   useEffect(() => {
-    loadRecipes();
-  }, [loadRecipes]);
-
-  useEffect(() => {
-    if (!selectedRecipeId) {
-      return undefined;
-    }
-
-    let cancelled = false;
-
-    const loadRecipeDetail = async () => {
-      setLoadingDetail(true);
-      setDetailError("");
-
-      const [recipeResult, linksResult] = await Promise.all([
-        supabase
-          .from("recipes")
-          .select("id, name, prep_time, cook_time, total_time, servings, instructions")
-          .eq("id", selectedRecipeId)
-          .maybeSingle(),
-        supabase
-          .from("recipe_ingredients")
-          .select("id, ingredient_id, original_name, quantity, unit")
-          .eq("recipe_id", selectedRecipeId)
-          .order("id", { ascending: true }),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (recipeResult.error || linksResult.error) {
-        console.error("Error loading recipe detail:", recipeResult.error || linksResult.error);
-        setDetailError("We could not load the ingredients for this recipe.");
-        setRecipeDetail(null);
-        setRecipeLinks([]);
-        setLoadingDetail(false);
-        return;
-      }
-
-      const links = linksResult.data || [];
-      const ingredientIds = [...new Set(links.map((link) => link.ingredient_id).filter(Boolean))];
-      let ingredientRows = [];
-
-      if (ingredientIds.length > 0) {
-        const { data, error: ingredientsError } = await supabase
-          .from("ingredients")
-          .select(`
-            id,
-            name,
-            unit,
-            category,
-            prices (
-              id,
-              avg_price,
-              date,
-              source
+    setServings(null);
+    setDetailOverride(null);
+    setDetailError("");
+    if (!selectedId || selected?.local) return;
+    let active = true;
+    setDetailLoading(true);
+    loadLinkedRecipe(selectedId)
+      .then((links) => {
+        if (!active) return;
+        const names = new Map(ingredients.map((i) => [i.id, i.name]));
+        setDetailOverride(
+          links.flatMap((link) => {
+            if (link.quantity != null && link.unit)
+              return [
+                `${link.quantity} ${link.unit} ${names.get(link.ingredient_id) || link.original_name}`,
+              ];
+            return String(
+              link.original_name || names.get(link.ingredient_id) || "",
             )
-          `)
-          .in("id", ingredientIds);
-
-        if (ingredientsError) {
-          console.error("Error loading recipe ingredient prices:", ingredientsError);
-          setDetailError("We could not load current ingredient prices for this recipe.");
-          setRecipeDetail(recipeResult.data || null);
-          setRecipeLinks([]);
-          setLoadingDetail(false);
-          return;
-        }
-
-        ingredientRows = data || [];
-      }
-
-      const ingredientsById = new Map(
-        ingredientRows.map((ingredient) => [ingredient.id, ingredient])
-      );
-
-      setRecipeDetail(recipeResult.data || null);
-      setRecipeLinks(
-        links.map((link) => ({
-          ...link,
-          ingredient: ingredientsById.get(link.ingredient_id) || {
-            id: link.ingredient_id,
-            name: link.original_name || "Unknown ingredient",
-            unit: null,
-            prices: [],
-          },
-        }))
-      );
-      setLoadingDetail(false);
-    };
-
-    loadRecipeDetail();
-
+              .split("|")
+              .filter(Boolean);
+          }),
+        );
+      })
+      .catch(() => {
+        if (active)
+          setDetailError(
+            "Ingredient details could not be loaded. Choose another recipe or try again later.",
+          );
+      })
+      .finally(() => {
+        if (active) setDetailLoading(false);
+      });
     return () => {
-      cancelled = true;
+      active = false;
     };
-  }, [selectedRecipeId]);
-
-  const filteredRecipes = useMemo(() => {
-    const query = search.trim().toLowerCase();
-
-    return recipes.filter((recipe) =>
-      !query || String(recipe.name || "").toLowerCase().includes(query)
-    );
-  }, [recipes, search]);
-
-  const costData = useMemo(
-    () => calculateRecipeCost(recipeLinks, source),
-    [recipeLinks, source]
+  }, [selectedId, selected?.local, ingredients]);
+  const recipe = useMemo(
+    () =>
+      selected
+        ? { ...selected, ingredients: detailOverride || selected.ingredients }
+        : null,
+    [selected, detailOverride],
   );
-
-  const selectedRecipe = recipeDetail || recipes.find(
-    (recipe) => recipe.id === selectedRecipeId
+  const cost = useMemo(
+    () => (recipe ? priceRecipe(recipe, priceIndex, source, servings) : null),
+    [recipe, priceIndex, source, servings],
   );
-  const rawRecipeIngredients = useMemo(
-    () => recipeIngredientData.recipes?.[selectedRecipe?.name] || [],
-    [selectedRecipe?.name]
-  );
-  const ingredientDisplay = useMemo(
-    () => buildRecipeIngredientRows(rawRecipeIngredients, costData),
-    [rawRecipeIngredients, costData]
-  );
-  const selectedSourceLabel = PRICE_SOURCES.find(
-    (item) => item.value === source
-  )?.label || source;
-  const instructions = String(selectedRecipe?.instructions || "")
-    .split(/\s*\|\s*/)
-    .map((step) => step.trim())
-    .filter(Boolean);
-  const pricedPercentage = ingredientDisplay.sourceCount > 0
-    ? Math.round((ingredientDisplay.coveredSourceCount / ingredientDisplay.sourceCount) * 100)
-    : 0;
-  const hasPricedIngredients = costData.pricedIngredients.length > 0;
-  const missingDisplayRows = ingredientDisplay.rows.filter((item) =>
-    ["missing", "not-catalog"].includes(item.displayStatus)
-  );
-
+  function update(key, value) {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    if (key === "q") next.delete("recipe");
+    setParams(next, { replace: true });
+  }
+  const missingPrices =
+    cost?.missing.filter((row) =>
+      ["unmatched", "no-price"].includes(row.status),
+    ) || [];
+  const missingQuantity =
+    cost?.missing.filter((row) => row.status === "quantity") || [];
+  const stale =
+    cost?.rows.filter((row) => row.cost !== null && isStale(row.price?.date)) ||
+    [];
   return (
-    <main className="recipes-page">
-      <section className="recipes-hero">
-        <div className="recipes-hero-copy">
-          <span className="recipes-eyebrow">
-            <CalculatorOutlined /> Recipe cost calculator
-          </span>
-          <h1>Know what your next ulam will cost.</h1>
+    <main className="page-shell recipes-page">
+      <section className="page-intro recipes-intro">
+        <div>
+          <span className="eyebrow">YOUR NEXT ULAM, FIGURED OUT</span>
+          <h1>
+            From “anong ulam?”
+            <br />
+            to <em>kain na.</em>
+          </h1>
           <p>
-            Pick a Filipino recipe and see an estimate using the latest ingredient prices.
-            Amounts are converted to each ingredient&apos;s catalog unit automatically.
+            Find a Filipino favorite, see the ingredients, and work out the
+            cost. Simple planning for the food you love.
           </p>
         </div>
-
-        <div className="recipe-source-control" aria-label="Choose recipe price source">
-          <span>Price source</span>
-          <div className="recipe-source-switch" role="group">
-            {PRICE_SOURCES.map((item) => (
-              <button
-                type="button"
-                key={item.value}
-                className={source === item.value ? "source-active" : ""}
-                aria-pressed={source === item.value}
-                onClick={() => setSource(item.value)}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
+        <div className="recipe-intro-note">
+          <span aria-hidden="true">🍽️</span>
+          <strong>A recipe for every day.</strong>
+          <span>
+            {recipesLoading
+              ? "Loading the collection…"
+              : `${recipes.length.toLocaleString()} recipes, ready to explore`}
+          </span>
         </div>
       </section>
-
       <section className="recipes-workspace" aria-label="Recipe collection">
         <aside className="recipe-library">
           <div className="recipe-library-heading">
-            <div>
-              <span className="section-kicker">Collection</span>
-              <h2>Filipino recipes</h2>
-            </div>
-            <span className="recipe-count">{recipes.length}</span>
+            <h2>The collection</h2>
+            <span>{filtered.length}</span>
           </div>
-
-          <Input
-            className="recipe-search"
-            aria-label="Search recipes"
-            placeholder="Search recipes"
-            prefix={<SearchOutlined />}
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            allowClear
-          />
-
-          {loadingRecipes && (
-            <div className="recipe-list-skeleton">
-              {Array.from({ length: 7 }).map((_, index) => (
-                <Skeleton active title={{ width: "80%" }} paragraph={false} key={index} />
-              ))}
-            </div>
-          )}
-
-          {!loadingRecipes && filteredRecipes.length === 0 && (
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="No recipes match your search."
+          <label className="search-field">
+            <SearchOutlined />
+            <input
+              aria-label="Search recipes"
+              value={query}
+              onChange={(event) => update("q", event.target.value)}
+              placeholder="Find your next favorite…"
             />
-          )}
-
-          {!loadingRecipes && filteredRecipes.length > 0 && (
-            <div className="recipe-list" role="listbox" aria-label="Recipes">
-              {filteredRecipes.map((recipe) => (
+          </label>
+          <div className="recipe-list" aria-label="Recipes">
+            {recipesLoading ? (
+              <Skeleton active paragraph={{ rows: 8 }} />
+            ) : filtered.length ? (
+              filtered.map((recipe) => (
                 <button
                   type="button"
-                  role="option"
-                  aria-selected={selectedRecipeId === recipe.id}
-                  className={`recipe-list-item ${selectedRecipeId === recipe.id ? "recipe-list-item-active" : ""}`}
                   key={recipe.id}
-                  onClick={() => setSelectedRecipeId(recipe.id)}
+                  onClick={() => update("recipe", recipe.id)}
+                  aria-current={selectedId === recipe.id ? "true" : undefined}
+                  className={
+                    selectedId === recipe.id ? "recipe-list-active" : ""
+                  }
                 >
-                  <span className="recipe-list-item-name">{recipe.name}</span>
-                  <span className="recipe-list-item-meta">
-                    {recipe.servings ? `${recipe.servings} servings` : "Servings not listed"}
+                  <strong>{recipe.name}</strong>
+                  <span>
+                    {recipe.servings
+                      ? `${recipe.servings} servings`
+                      : "Servings vary"}
+                    <ArrowRightOutlined />
                   </span>
                 </button>
-              ))}
-            </div>
-          )}
+              ))
+            ) : (
+              <p className="state-message">
+                No recipes match “{query}”.
+                <br />
+                <button className="text-link" onClick={() => update("q", "")}>
+                  Clear search
+                </button>
+              </p>
+            )}
+          </div>
         </aside>
-
-        <article className="recipe-detail-panel">
-          {error && <Alert type="error" showIcon message={error} />}
-
-          {!error && loadingRecipes && (
-            <div className="recipe-detail-loading">
-              <Skeleton active paragraph={{ rows: 8 }} />
-            </div>
-          )}
-
-          {!error && !loadingRecipes && !selectedRecipe && (
-            <div className="recipe-empty-state">
-              <Empty description="Choose a recipe to see its cost." />
-            </div>
-          )}
-
-          {!error && !loadingRecipes && selectedRecipe && (
+        <article
+          className="recipe-detail-panel"
+          aria-busy={detailLoading || loading}
+        >
+          {recipeError && <Alert type="error" title={recipeError} showIcon />}
+          {recipesLoading ? (
+            <Skeleton active paragraph={{ rows: 12 }} />
+          ) : recipe && cost ? (
             <>
               <header className="recipe-detail-header">
-                <div>
-                  <span className="section-kicker">Recipe estimate</span>
-                  <h2>{selectedRecipe.name}</h2>
-                  <div className="recipe-meta-row">
-                    <span><ClockCircleOutlined /> {formatRecipeTime(selectedRecipe)}</span>
-                    <span><TeamOutlined /> {selectedRecipe.servings || "—"} servings</span>
-                    <span><ShopOutlined /> {selectedSourceLabel}</span>
-                  </div>
-                </div>
-
-                <div className="recipe-total-card">
-                  <span>Estimated total</span>
-                  <strong>{hasPricedIngredients ? formatCurrency(costData.total) : "—"}</strong>
-                  <small>
-                    {selectedRecipe.servings && hasPricedIngredients
-                      ? `${formatCurrency(costData.total / Number(selectedRecipe.servings))} per serving`
-                      : hasPricedIngredients
-                        ? "Based on available prices"
-                        : "Price data unavailable"}
-                  </small>
+                <span className="eyebrow">THE ULAM COLLECTION</span>
+                <h2>{recipe.name}</h2>
+                <div className="recipe-meta-row">
+                  <span>
+                    <ClockCircleOutlined />
+                    {formatTime(recipe)}
+                  </span>
+                  <span>
+                    <TeamOutlined />
+                    {recipe.servings
+                      ? `${recipe.servings} original servings`
+                      : "Servings not listed"}
+                  </span>
                 </div>
               </header>
-
-              {detailError && (
+              <div className="recipe-settings">
+                <div>
+                  <label>Price source</label>
+                  <div
+                    className="source-tabs"
+                    aria-label="Choose recipe price source"
+                  >
+                    {PRICE_SOURCES.map((item) => (
+                      <button
+                        key={item.value}
+                        type="button"
+                        aria-pressed={source === item.value}
+                        onClick={() => update("source", item.value)}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <label className="servings-control">
+                  Servings
+                  <input
+                    type="number"
+                    aria-label="Number of servings"
+                    min="1"
+                    max="100"
+                    disabled={!recipe.servings}
+                    value={servings || recipe.servings || ""}
+                    onChange={(event) =>
+                      setServings(
+                        event.target.value
+                          ? Math.max(
+                              1,
+                              Math.min(100, Number(event.target.value)),
+                            )
+                          : null,
+                      )
+                    }
+                  />
+                </label>
+              </div>
+              {error && (
                 <Alert
-                  type="error"
+                  className="data-warning"
+                  type="warning"
                   showIcon
-                  message="Recipe details unavailable"
-                  description={detailError}
+                  title={error}
+                  action={<button onClick={refresh}>Retry</button>}
                 />
               )}
-
-              {loadingDetail && (
-                <div className="recipe-detail-loading">
-                  <Skeleton active paragraph={{ rows: 8 }} />
-                </div>
+              {detailError && (
+                <Alert
+                  className="data-warning"
+                  type="error"
+                  title={detailError}
+                  showIcon
+                />
               )}
-
-              {!loadingDetail && !detailError && (
+              <section className="recipe-cost-summary">
+                <div>
+                  <span>
+                    {cost.missing.length
+                      ? "KNOWN INGREDIENT SUBTOTAL"
+                      : "ESTIMATED INGREDIENT COST"}
+                  </span>
+                  <strong>
+                    {loading
+                      ? "…"
+                      : cost.pricedCount
+                        ? formatMoney(cost.total)
+                        : "—"}
+                  </strong>
+                  <small>
+                    {cost.pricedCount && cost.servings
+                      ? `${formatMoney(cost.total / cost.servings)} ${cost.missing.length ? "subtotal" : "estimate"} per serving`
+                      : "Based on available source quotes"}
+                  </small>
+                </div>
+                <div className="recipe-coverage">
+                  <span>
+                    {loading
+                      ? "Loading prices…"
+                      : `${cost.pricedCount} of ${cost.requiredCount} measured ingredients priced`}
+                  </span>
+                  <div
+                    role="progressbar"
+                    aria-label="Ingredient price coverage"
+                    aria-valuenow={cost.coverage}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                  >
+                    <span style={{ width: `${cost.coverage}%` }} />
+                  </div>
+                  <p>
+                    {cost.missing.length
+                      ? "The subtotal excludes unpriced ingredients."
+                      : "All listed, measured ingredients are included."}
+                  </p>
+                </div>
+              </section>
+              {loading || detailLoading ? (
+                <Skeleton active paragraph={{ rows: 8 }} />
+              ) : (
                 <>
-                  <div className="recipe-coverage-card">
-                    <div>
-                      <strong>{pricedPercentage}%</strong>
+                  {missingPrices.length > 0 && (
+                    <div className="recipe-coverage-note">
+                      <InfoCircleOutlined />
+                      <p>
+                        <strong>
+                          {missingPrices.length} ingredient
+                          {missingPrices.length === 1 ? " has" : "s have"} no
+                          verified price.
+                        </strong>{" "}
+                        {missingPrices
+                          .map(
+                            (row) =>
+                              row.definition?.name ||
+                              row.parsed.name ||
+                              row.rawName,
+                          )
+                          .join(", ")}
+                        . These are excluded from the subtotal.
+                      </p>
+                    </div>
+                  )}
+                  {missingQuantity.length > 0 && (
+                    <div className="recipe-coverage-note">
+                      <InfoCircleOutlined />
+                      <p>
+                        <strong>
+                          {missingQuantity.length} ingredient
+                          {missingQuantity.length === 1 ? " needs" : "s need"} a
+                          quantity or unit.
+                        </strong>{" "}
+                        The recipe doesn’t provide enough information to
+                        calculate these costs.
+                      </p>
+                    </div>
+                  )}
+                  {stale.length > 0 && (
+                    <p className="stale-note">
+                      {stale.length} ingredient quote
+                      {stale.length === 1 ? " is" : "s are"} older than 7 days.
+                      Check the dates below.
+                    </p>
+                  )}
+                  <section className="recipe-ingredients-section">
+                    <div className="recipe-section-heading">
+                      <h3>Your ingredient list</h3>
                       <span>
-                        {ingredientDisplay.hasRawIngredients
-                          ? "of recipe ingredients covered"
-                          : "of linked ingredients priced"}
+                        {cost.servings
+                          ? `For ${cost.servings} servings`
+                          : "As listed in the recipe"}
                       </span>
                     </div>
-                    <span>
-                      {ingredientDisplay.coveredSourceCount} of {ingredientDisplay.sourceCount} ingredients included
-                    </span>
-                  </div>
-
-                  {missingDisplayRows.length > 0 && (
-                    <Alert
-                      className="recipe-warning"
-                      type="warning"
-                      showIcon
-                      icon={<WarningOutlined />}
-                      message={`${missingDisplayRows.length} ingredient${missingDisplayRows.length === 1 ? "" : "s"} not included in the total`}
-                      description={missingDisplayRows
-                        .map((item) => item.rawName || item.ingredient.name)
-                        .filter(Boolean)
-                        .join(", ")}
-                    />
-                  )}
-
-                  <section className="recipe-section">
-                    <div className="recipe-section-heading">
-                      <div>
-                        <span className="section-kicker">Shopping list</span>
-                        <h3>Ingredients and prices</h3>
-                      </div>
-                      <span className="recipe-section-note">Latest {selectedSourceLabel} price</span>
-                    </div>
-
                     <div className="recipe-ingredients-table">
-                      {ingredientDisplay.rows.map((item) => {
-                        const conversionNote = item.conversion?.estimated
-                          ? "Approximate conversion"
-                          : item.conversion?.reason;
-                        const priceOrigin = item.price
-                          ? item.price.source || "DA Pricewatch"
-                          : "";
-                        const ingredientName = item.isRawSource
-                          ? item.rawName
-                          : item.ingredient.name;
-                        const matchedName = item.isRawSource && item.matchedIngredientName
-                          ? `Matched to ${item.matchedIngredientName}`
-                          : item.original_name && item.original_name !== item.ingredient.name
-                            ? item.original_name
-                            : "";
-                        const statusLabel = item.displayStatus === "not-catalog"
-                          ? "Not in catalog"
-                          : item.displayStatus === "combined"
-                            ? "Included"
-                            : item.cost !== null
-                              ? "Priced"
-                              : "Price unavailable";
-                        const priceNote = [
-                          source === "best" ? priceOrigin : "",
-                          item.isCombined ? "Combined with another recipe line" : "",
-                          conversionNote,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ");
-
-                        return (
-                          <div className="recipe-ingredient-row" key={item.id}>
-                            <span className="recipe-ingredient-quantity">
-                              {item.isRawSource
-                                ? "Recipe amount"
-                                : formatQuantity(item.quantity, item.unit)}
-                            </span>
-                            <div className="recipe-ingredient-name">
-                              <strong>{ingredientName}</strong>
-                              {matchedName && <small>{matchedName}</small>}
-                            </div>
-                            <div className="recipe-ingredient-price">
-                              {item.displayStatus === "combined" ? (
-                                <>
-                                  <strong className="recipe-price-included">Included</strong>
-                                  <small>{priceNote || "Combined recipe amount"}</small>
-                                </>
-                              ) : item.cost !== null ? (
-                                <>
-                                  <strong>{formatCurrency(item.cost)}</strong>
-                                  <span className="recipe-status recipe-status-priced">{statusLabel}</span>
-                                  {priceNote && <small>{priceNote}</small>}
-                                </>
-                              ) : (
-                                <>
-                                  <strong className="recipe-price-missing">Not priced</strong>
-                                  <span className={`recipe-status recipe-status-${item.displayStatus}`}>{statusLabel}</span>
-                                  <small>
-                                    {item.displayStatus === "not-catalog"
-                                      ? "Not yet in ingredient catalog"
-                                      : item.price
-                                        ? priceNote || "Unit needs review"
-                                        : `No ${selectedSourceLabel} price`}
-                                  </small>
-                                </>
-                              )}
-                            </div>
+                      {cost.rows.map((row) => (
+                        <div
+                          className={`recipe-ingredient-row row-${row.status}`}
+                          key={row.id}
+                        >
+                          <span className="ingredient-row-check">
+                            {row.cost !== null ? <CheckOutlined /> : "—"}
+                          </span>
+                          <div className="recipe-ingredient-name">
+                            <strong>{row.rawName}</strong>
+                            <small>
+                              {servings && servings !== recipe.servings
+                                ? `Scaled: ${formatQuantity(row.quantity, row.parsed.unit)} · `
+                                : ""}
+                              {row.conversion.estimated && row.cost !== null
+                                ? `${row.conversion.reason}. `
+                                : ""}
+                              {row.price
+                                ? `${row.price.source} · ${row.price.ingredientName} · ${formatDate(row.price.date)}`
+                                : statusLabels[row.status]}
+                            </small>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </section>
-
-                  {instructions.length > 0 && (
-                    <section className="recipe-section recipe-instructions">
-                      <div className="recipe-section-heading">
-                        <div>
-                          <span className="section-kicker">How to cook it</span>
-                          <h3>Instructions</h3>
+                          <div className="recipe-ingredient-price">
+                            <strong>
+                              {row.cost !== null ? formatMoney(row.cost) : "—"}
+                            </strong>
+                            <small>
+                              {row.cost !== null
+                                ? row.conversion.estimated
+                                  ? "Estimate"
+                                  : "Ingredient cost"
+                                : row.price && row.status === "quantity"
+                                  ? `${formatMoney(row.price.avg_price)} / ${row.definition.unit} · quantity needed`
+                                  : statusLabels[row.status]}
+                            </small>
+                          </div>
                         </div>
+                      ))}
+                    </div>
+                    <p className="recipe-calculation-note">
+                      Costs use the amount needed, rather than the price of a
+                      whole pack. Cup, piece, and density conversions are
+                      approximate where indicated. Water and seasonings without
+                      quantities are excluded. “Lowest available” uses the
+                      lowest recent quote across the two sources.
+                    </p>
+                  </section>
+                  {recipe.instructions?.length > 0 && (
+                    <section className="recipe-instructions">
+                      <div className="recipe-section-heading">
+                        <h3>Let’s get cooking.</h3>
+                        <span>{recipe.instructions.length} steps</span>
                       </div>
                       <ol>
-                        {instructions.map((step, index) => (
-                          <li key={`${index}-${step.slice(0, 20)}`}>
-                            <span>{index + 1}</span>
+                        {recipe.instructions.map((step, index) => (
+                          <li key={index}>
+                            <span>{String(index + 1).padStart(2, "0")}</span>
                             <p>{step}</p>
                           </li>
                         ))}
                       </ol>
                     </section>
                   )}
+                  {!recipe.ingredients.length && !detailLoading && (
+                    <p className="state-message">
+                      No ingredient details are available for this recipe yet.
+                    </p>
+                  )}
+                  <Link className="text-link recipe-market-link" to="/prices">
+                    Explore all ingredient prices <ArrowRightOutlined />
+                  </Link>
                 </>
               )}
             </>
+          ) : (
+            <div className="state-message">
+              Choose a recipe from the collection to get started.
+            </div>
           )}
         </article>
       </section>
-
-      <div className="recipes-mobile-note">
-        <ArrowLeftOutlined /> Select a recipe from the collection to compare its cost.
-      </div>
     </main>
   );
-};
-
-export default Recipes;
+}

@@ -1,0 +1,15 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Bowl -->
+  <path d="M16 28C16 40 24 48 32 48C40 48 48 40 48 28H16Z" fill="#22C55E"/>
+
+  <!-- Bowl Rim -->
+  <path d="M14 28H50" stroke="#166534" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Steam -->
+  <path d="M26 18C24 15 24 12 26 10" stroke="#166534" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M32 18C30 15 30 12 32 10" stroke="#166534" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M38 18C36 15 36 12 38 10" stroke="#166534" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Peso Sign -->
+  <text x="32" y="38" text-anchor="middle" font-size="14" font-family="Arial" fill="white">₱</text>
+</svg>

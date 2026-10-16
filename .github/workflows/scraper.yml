@@ -1,114 +1,54 @@
-name: Daily DA and SM Scraper
+name: Daily NCR ingredient prices
 
 on:
   schedule:
-      - cron: "0 16 * * *"
+    # 00:00 Asia/Manila, every day (GitHub cron uses UTC).
+    - cron: "0 16 * * *"
   workflow_dispatch:
 
-jobs:
-  scrape:
-    runs-on: ubuntu-latest
+permissions:
+  contents: read
 
+concurrency:
+  group: daily-ingredient-prices
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
     env:
       SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
-      PUPPETEER_CACHE_DIR: /home/runner/.cache/puppeteer
-
+      # Optional: use this when database RLS restricts catalog/price writes.
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SCRAPER_OUTPUT_DIR: ${{ runner.temp }}/ingredient-prices
+      PUPPETEER_SKIP_DOWNLOAD: "true"
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20
-
-      - name: Install dependencies
-        run: npm install
-        working-directory: ./scraper
-
-      - name: Install Chrome for Puppeteer
-        run: |
-          node - <<'NODE'
-          const { install } = require("@puppeteer/browsers");
-
-          const buildId = "147.0.7727.57";
-          const cacheDir = process.env.PUPPETEER_CACHE_DIR;
-
-          console.log("Installing Chrome...");
-          console.log("Chrome version:", buildId);
-          console.log("Cache:", cacheDir);
-
-          install({
-            browser: "chrome",
-            buildId: buildId,
-            cacheDir: cacheDir
-          })
-            .then(() => {
-              console.log("✓ Chrome installation complete");
-            })
-            .catch((error) => {
-              console.error("❌ Chrome installation failed");
-              console.error(error);
-              process.exit(1);
-            });
-          NODE
-        working-directory: ./scraper
-
-      - name: Verify Chrome
-        run: |
-          node - <<'NODE'
-          const puppeteer = require("puppeteer");
-          const fs = require("fs");
-
-          console.log("Puppeteer:", require("puppeteer/package.json").version);
-
-          const executable = puppeteer.executablePath();
-
-          console.log("Chrome executable:");
-          console.log(executable);
-
-          if (!fs.existsSync(executable)) {
-            console.error("❌ Chrome executable does not exist.");
-            process.exit(1);
-          }
-
-          console.log("✓ Chrome executable exists.");
-          NODE
-        working-directory: ./scraper
-
-
-      # =========================
-      # DA PRICEWATCH
-      # =========================
-      - name: Run DA scraper
-        run: node index.js
-        working-directory: ./scraper
-        
-      # =========================
-      # SM SUPERMARKETS
-      # =========================
-
-      - name: Scrape SM products
-        run: node scrapeSM.js
-        working-directory: ./scraper
-
-      - name: Filter SM products
-        run: node filterSM.js
-        working-directory: ./scraper
-
-      - name: Match SM products
-        run: node matchSM.js
-        working-directory: ./scraper
-
-      - name: Normalize SM prices
-        run: node normalizeSM.js
-        working-directory: ./scraper
-
-      - name: Get best SM prices
-        run: node getBestSMPrices.js
-        working-directory: ./scraper
-
-      - name: Insert SM prices
-        run: node insertSMPrices.js
-        working-directory: ./scraper
+          node-version: 22
+          cache: npm
+          cache-dependency-path: scraper/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+        working-directory: scraper
+      - name: Check matching, quantities, and source parsers
+        run: npm test
+        working-directory: scraper
+      - name: Collect and update both sources independently
+        run: npm run daily
+        working-directory: scraper
+      - name: Audit recipe pricing coverage
+        if: always()
+        run: npm run coverage
+        working-directory: scraper
+      - name: Save source quotes and coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ingredient-price-audit-${{ github.run_id }}
+          path: ${{ runner.temp }}/ingredient-prices
+          retention-days: 14
+          if-no-files-found: warn

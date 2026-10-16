@@ -1,402 +1,204 @@
+import { useState, useMemo } from "react";
+import { Modal } from "antd";
+import {
+  ArrowDownOutlined,
+  ArrowUpOutlined,
+  ArrowRightOutlined,
+} from "@ant-design/icons";
+import { formatMoney, formatDate, isStale } from "../../utils/format";
 import "./IngredientCard.css";
-import { useState } from "react";
-import { Card, Modal } from "antd";
-import { ArrowDownOutlined, ArrowUpOutlined } from "@ant-design/icons";
-
-const currencyFormatter = new Intl.NumberFormat("en-PH", {
-  style: "currency",
-  currency: "PHP",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-const dateFormatter = new Intl.DateTimeFormat("en-PH", {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-});
-
-const getChartData = (prices) => {
-  const values = [...prices]
-    .reverse()
-    .map((item) => ({
-      date: item.date,
-      value: Number(item.avg_price),
-    }))
-    .filter((item) => Number.isFinite(item.value));
-
-  const min = values.length > 0
-    ? Math.min(...values.map((item) => item.value))
-    : null;
-  const max = values.length > 0
-    ? Math.max(...values.map((item) => item.value))
-    : null;
-
-  if (values.length < 2) {
-    return {
-      points: [],
-      pointsString: "",
-      areaPoints: "",
-      min,
-      max,
-      startDate: values[0]?.date,
-      endDate: values[values.length - 1]?.date,
-    };
-  }
-
+function chartPoints(history) {
+  const values = history.map((item) => Number(item.avg_price));
+  const min = Math.min(...values);
+  const max = Math.max(...values);
   const range = max - min || 1;
-  const points = values.map((item, index) => {
-    const x = 2 + (index / (values.length - 1)) * 96;
-    const y = 90 - ((item.value - min) / range) * 80;
-
-    return {
-      ...item,
-      x,
-      y,
-    };
-  });
-
-  const pointsString = points
-    .map((point) => `${point.x},${point.y}`)
-    .join(" ");
-
-  return {
-    points,
-    pointsString,
-    areaPoints: `2,90 ${pointsString} 98,90`,
-    min,
-    max,
-    startDate: points[0].date,
-    endDate: points[points.length - 1].date,
-  };
-};
-
-const IngredientCard = ({
+  return history.map((item, index) => ({
+    ...item,
+    x: 3 + (index / Math.max(history.length - 1, 1)) * 94,
+    y: 75 - ((Number(item.avg_price) - min) / range) * 60,
+  }));
+}
+function PriceChart({ history, large = false }) {
+  const points = chartPoints(history);
+  if (points.length < 2)
+    return (
+      <div className="chart-empty">
+        {points.length ? "One price observation" : "No recent history"}
+      </div>
+    );
+  return (
+    <svg
+      className={large ? "price-chart price-chart-large" : "price-chart"}
+      viewBox="0 0 100 90"
+      preserveAspectRatio="none"
+      role="img"
+      aria-label="Recorded price trend"
+    >
+      <polygon
+        points={`3,87 ${points.map((p) => `${p.x},${p.y}`).join(" ")} 97,87`}
+        fill="currentColor"
+        opacity=".07"
+      />
+      <polyline
+        points={points.map((p) => `${p.x},${p.y}`).join(" ")}
+        stroke="currentColor"
+        strokeWidth="1.6"
+        vectorEffect="non-scaling-stroke"
+        fill="none"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      {large &&
+        points.map((point, i) => (
+          <circle key={i} cx={point.x} cy={point.y} r="1" fill="currentColor">
+            <title>
+              {formatDate(point.date)}: {formatMoney(point.avg_price)}
+            </title>
+          </circle>
+        ))}
+    </svg>
+  );
+}
+export default function IngredientCard({
   name,
   category,
   price,
   averagePrice,
   unit,
   priceHistory,
-}) => {
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-  const safePriceHistory = priceHistory || [];
-  const sortedHistory = [...safePriceHistory]
-    .filter((item) => {
-      const itemDate = new Date(item.date);
-      return Number.isFinite(Number(item.avg_price)) && !Number.isNaN(itemDate.getTime());
-    })
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
-  const last30Days = sortedHistory.filter(
-    (item) => new Date(item.date) >= thirtyDaysAgo
-  );
-
-  const numericPrice = Number(price || 0);
-  const numericAverage = averagePrice == null ? null : Number(averagePrice);
-  const priceDifference = numericAverage == null
-    ? 0
-    : numericPrice - numericAverage;
-  const pricePercentage = numericAverage > 0
-    ? (priceDifference / numericAverage) * 100
-    : 0;
-  const latestDate = sortedHistory[0]?.date;
-  const detailHistory = last30Days.length > 0 ? last30Days : sortedHistory;
-  const cardChartData = getChartData(last30Days);
-  const detailChartData = getChartData(detailHistory);
-  const detailLow = detailChartData.min;
-  const detailHigh = detailChartData.max;
-  const recentHistory = sortedHistory.slice(0, 8);
-
-  const handleCardKeyDown = (event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      setIsDetailOpen(true);
+  source,
+  reference,
+  rateReference = false,
+  date,
+}) {
+  const [open, setOpen] = useState(false);
+  const history = useMemo(() => {
+    const byDate = new Map();
+    for (const item of priceHistory || []) {
+      const existing = byDate.get(item.date);
+      if (!existing || +item.avg_price < +existing.avg_price)
+        byDate.set(item.date, item);
     }
-  };
-
+    return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+  }, [priceHistory]);
+  const cutoff = Date.now() - 30 * 86400000;
+  const recent = history.filter((p) => Date.parse(p.date) >= cutoff);
+  const diff =
+    averagePrice > 0 ? ((price - averagePrice) / averagePrice) * 100 : null;
   return (
     <>
-    <Card
-      className="ingredient-card"
-      role="button"
-      tabIndex={0}
-      aria-label={`View price details for ${name}`}
-      onClick={() => setIsDetailOpen(true)}
-      onKeyDown={handleCardKeyDown}
-    >
-      <div className="ingredient-content">
-        <span className="ingredient-tag">{category}</span>
-
-        <h3>{name}</h3>
-
-        <h2>
-          {currencyFormatter.format(numericPrice)}
-          <span className="price-unit"> / {unit}</span>
-        </h2>
-
-        <div className="ingredient-history">
-          <span>30-day average</span>
-          <span>
-            {numericAverage == null
-              ? "No recent data"
-              : currencyFormatter.format(numericAverage)}
-          </span>
-        </div>
-
-        {numericAverage != null && (
-          <div
-            className={
-              priceDifference > 0
-                ? "price-up"
-                : priceDifference < 0
-                ? "price-down"
-                : "price-same"
-            }
+      <button
+        type="button"
+        className="ingredient-card"
+        onClick={() => setOpen(true)}
+        aria-label={`View price details for ${name}`}
+      >
+        <div className="ingredient-card-top">
+          <span>{category}</span>
+          <span
+            className={`price-change ${diff < 0 ? "price-change-down" : ""}`}
           >
-            {priceDifference > 0 ? (
-              <>
-                <ArrowUpOutlined aria-hidden="true" />
-                {` ${currencyFormatter.format(priceDifference)} (+${pricePercentage.toFixed(1)}%)`}
-              </>
-            ) : priceDifference < 0 ? (
-              <>
-                <ArrowDownOutlined aria-hidden="true" />
-                {` ${currencyFormatter.format(Math.abs(priceDifference))} (${pricePercentage.toFixed(1)}%)`}
-              </>
+            {diff === null ? (
+              "—"
+            ) : Math.abs(diff) < 0.05 ? (
+              "Steady"
             ) : (
-              "No change"
+              <>
+                {diff > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+                {Math.abs(diff).toFixed(1)}%
+              </>
             )}
-          </div>
-        )}
-
-        <div className="ingredient-chart" aria-label="30-day price trend">
-          {cardChartData.points.length > 1 ? (
-            <svg
-              className="ingredient-sparkline"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-              role="img"
-              aria-label="Price trend over the last 30 days"
-            >
-              <title>Price trend over the last 30 days</title>
-              <polygon
-                points={cardChartData.areaPoints}
-                fill="currentColor"
-                opacity="0.1"
-              />
-              <polyline
-                points={cardChartData.pointsString}
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                vectorEffect="non-scaling-stroke"
-              />
-            </svg>
-          ) : (
-            <span className="chart-empty">
-              {last30Days.length === 1 ? "Limited history" : "No recent history"}
-            </span>
-          )}
-        </div>
-
-        {latestDate && (
-          <span className="ingredient-updated">
-            Updated {dateFormatter.format(new Date(latestDate))}
           </span>
+        </div>
+        <h3>{name}</h3>
+        <div className="ingredient-price">
+          {formatMoney(price)}
+          <small> / {unit}</small>
+        </div>
+        {rateReference && (
+          <span className="ingredient-reference">Reference: {reference}</span>
         )}
-
-        <span className="ingredient-card-action">View price details</span>
-      </div>
-    </Card>
-    <Modal
-      className="ingredient-detail-modal"
-      title={
-        <div className="ingredient-detail-title">
-          <span>{name}</span>
-          <small>{category}</small>
-        </div>
-      }
-      open={isDetailOpen}
-      onCancel={() => setIsDetailOpen(false)}
-      footer={null}
-      centered
-    >
-      <div className="ingredient-detail-summary">
-        <div>
-          <span>Current price</span>
-          <strong>{currencyFormatter.format(numericPrice)}</strong>
-          <small>per {unit}</small>
-        </div>
-        <div>
+        <PriceChart history={recent} />
+        <div className="ingredient-card-average">
           <span>30-day average</span>
           <strong>
-            {numericAverage == null
-              ? "No recent data"
-              : currencyFormatter.format(numericAverage)}
+            {averagePrice == null ? "—" : formatMoney(averagePrice)}
           </strong>
         </div>
-      </div>
-
-      <div className="ingredient-detail-metrics">
-        <div>
-          <span>30-day low</span>
-          <strong>
-            {detailLow == null ? "-" : currencyFormatter.format(detailLow)}
-          </strong>
+        <div className="ingredient-card-source">
+          <span>
+            {source === "DA Pricewatch" ? "DA Pricewatch" : "SM Supermarket"}
+          </span>
+          <ArrowRightOutlined />
         </div>
-        <div>
-          <span>30-day high</span>
-          <strong>
-            {detailHigh == null ? "-" : currencyFormatter.format(detailHigh)}
-          </strong>
-        </div>
-        <div>
-          <span>Price records</span>
-          <strong>{sortedHistory.length}</strong>
-        </div>
-      </div>
-
-      <div className="ingredient-detail-chart-heading">
-        <div>
-          <h3>30-day price trend</h3>
-          <span>Hover a point to see the exact price.</span>
-        </div>
-        {detailLow != null && detailHigh != null && (
-          <strong>
-            {currencyFormatter.format(detailLow)} - {currencyFormatter.format(detailHigh)}
-          </strong>
-        )}
-      </div>
-
-      {detailChartData.points.length > 1 ? (
-        <>
-          <div className="ingredient-detail-chart">
-            <div className="chart-y-axis" aria-hidden="true">
-              <span>{currencyFormatter.format(detailHigh)}</span>
-              <span>
-                {currencyFormatter.format((detailHigh + detailLow) / 2)}
-              </span>
-              <span>{currencyFormatter.format(detailLow)}</span>
-            </div>
-
-            <div className="ingredient-detail-plot">
-              <svg
-                className="ingredient-detail-sparkline"
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-                role="img"
-                aria-label={`${name} price trend over the last 30 days`}
-              >
-                <title>{name} price trend over the last 30 days</title>
-                {[10, 50, 90].map((y) => (
-                  <line
-                    key={y}
-                    x1="2"
-                    x2="98"
-                    y1={y}
-                    y2={y}
-                    stroke="currentColor"
-                    strokeOpacity="0.14"
-                    strokeWidth="0.8"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                ))}
-                <polygon
-                  points={detailChartData.areaPoints}
-                  fill="currentColor"
-                  opacity="0.1"
-                />
-                <polyline
-                  points={detailChartData.pointsString}
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  vectorEffect="non-scaling-stroke"
-                />
-                {detailChartData.points.map((point, index) => (
-                  <circle
-                    key={`${point.date}-${point.value}-${index}`}
-                    cx={point.x}
-                    cy={point.y}
-                    r="1.4"
-                    fill="currentColor"
-                    stroke="#ffffff"
-                    strokeWidth="0.8"
-                    vectorEffect="non-scaling-stroke"
-                  >
-                    <title>
-                      {dateFormatter.format(new Date(point.date))}: {currencyFormatter.format(point.value)}
-                    </title>
-                  </circle>
-                ))}
-              </svg>
-            </div>
-          </div>
-
-          <div className="ingredient-chart-range">
-            <span>{dateFormatter.format(new Date(detailChartData.startDate))}</span>
-            <span>Oldest to latest</span>
-            <span>{dateFormatter.format(new Date(detailChartData.endDate))}</span>
-          </div>
-        </>
-      ) : (
-        <div className="ingredient-detail-chart">
-          <span className="chart-empty">Not enough history for a trend line</span>
-        </div>
-      )}
-
-      {numericAverage != null && (
-        <p
-          className={`ingredient-detail-trend ${
-            priceDifference > 0
-              ? "trend-up"
-              : priceDifference < 0
-              ? "trend-down"
-              : "trend-same"
-          }`}
+        <span
+          className={`ingredient-card-date${isStale(date) ? " stale-date" : ""}`}
         >
-          {priceDifference > 0 ? (
-            <ArrowUpOutlined aria-hidden="true" />
-          ) : priceDifference < 0 ? (
-            <ArrowDownOutlined aria-hidden="true" />
-          ) : null}
-          {priceDifference > 0
-            ? `Currently ${currencyFormatter.format(priceDifference)} above the 30-day average (${pricePercentage.toFixed(1)}%).`
-            : priceDifference < 0
-            ? `Currently ${currencyFormatter.format(Math.abs(priceDifference))} below the 30-day average (${Math.abs(pricePercentage).toFixed(1)}%).`
-            : "Currently equal to the 30-day average."}
-        </p>
-      )}
-
-      <div className="ingredient-detail-divider" />
-
-      <div className="ingredient-history-heading">
-        <h3>Recent price records</h3>
-        <span>{recentHistory.length} shown</span>
-      </div>
-
-      {recentHistory.length > 0 ? (
-        <div className="ingredient-history-list">
-          {recentHistory.map((item) => (
-            <div className="ingredient-history-row" key={item.id || `${item.date}-${item.avg_price}`}>
-              <span>{dateFormatter.format(new Date(item.date))}</span>
-              <strong>{currencyFormatter.format(Number(item.avg_price))}</strong>
-            </div>
-          ))}
+          {isStale(date) ? "Older quote · " : ""}
+          {formatDate(date)}
+        </span>
+      </button>
+      <Modal
+        title={
+          <div className="ingredient-modal-title">
+            <span className="eyebrow">INGREDIENT PRICE DETAILS</span>
+            <h2>{name}</h2>
+          </div>
+        }
+        open={open}
+        onCancel={() => setOpen(false)}
+        footer={null}
+        centered
+        width={620}
+      >
+        <div className="ingredient-modal-stats">
+          <div>
+            <small>Latest source quote</small>
+            <strong>
+              {formatMoney(price)}
+              <span> / {unit}</span>
+            </strong>
+          </div>
+          <div>
+            <small>30-day average</small>
+            <strong>
+              {averagePrice == null ? "—" : formatMoney(averagePrice)}
+            </strong>
+          </div>
         </div>
-      ) : (
-        <p className="ingredient-history-empty">No price records are available.</p>
-      )}
-    </Modal>
+        <p className="ingredient-modal-source">
+          {source} · {reference} · {formatDate(date)}
+        </p>
+        {isStale(date) && (
+          <p className="stale-note">
+            This quote is more than 7 days old. The current store or market
+            price may differ.
+          </p>
+        )}
+        <h3 className="ingredient-modal-heading">Price history</h3>
+        <PriceChart history={recent.length ? recent : history} large />
+        <div className="ingredient-history-range">
+          <span>{formatDate(history[0]?.date)}</span>
+          <span>{formatDate(history.at(-1)?.date)}</span>
+        </div>
+        <h3 className="ingredient-modal-heading">Recent observations</h3>
+        <div className="ingredient-history-table">
+          {[...history]
+            .reverse()
+            .slice(0, 10)
+            .map((item) => (
+              <div key={item.date}>
+                <span>{formatDate(item.date)}</span>
+                <strong>{formatMoney(item.avg_price)}</strong>
+              </div>
+            ))}
+        </div>
+        <p className="ingredient-modal-disclaimer">
+          DA quotes are averages of available NCR market observations. SM quotes
+          represent the lowest matched, in-stock product per catalog unit.
+          Ingredient variants and stores can differ.
+        </p>
+      </Modal>
     </>
   );
-};
-
-export default IngredientCard;
+}

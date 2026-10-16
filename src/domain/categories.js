@@ -1,0 +1,58 @@
+export const CATEGORIES = [
+  {
+    name: "Vegetables",
+    label: "Vegetables",
+    emoji: "🥬",
+    description: "Fresh greens, roots, and everything for your gulay.",
+    color: "#eaf2dc",
+  },
+  {
+    name: "Meat and Poultry",
+    label: "Meat & poultry",
+    emoji: "🍗",
+    description: "Everyday proteins for family favorites.",
+    color: "#f8e5d9",
+  },
+  {
+    name: "Fish",
+    label: "Fish & seafood",
+    emoji: "🐟",
+    description: "From bangus and tilapia to shrimp and squid.",
+    color: "#e0edf0",
+  },
+  {
+    name: "Fruits",
+    label: "Fruits",
+    emoji: "🍋",
+    description: "A little sweetness, a little zest, always in season.",
+    color: "#fbefc7",
+  },
+  {
+    name: "Spices",
+    label: "Herbs & spices",
+    emoji: "🧄",
+    description: "The small ingredients that make a big difference.",
+    color: "#eee6f1",
+  },
+  {
+    name: "Rice",
+    label: "Rice & grains",
+    emoji: "🍚",
+    description: "The foundation of a satisfying Filipino meal.",
+    color: "#f2eada",
+  },
+  {
+    name: "Pantry",
+    label: "Pantry essentials",
+    emoji: "🥫",
+    description: "Sauces, oils, noodles, and cupboard staples.",
+    color: "#f4e3d9",
+  },
+  {
+    name: "Other Commodities",
+    label: "More essentials",
+    emoji: "🧺",
+    description: "Sugar, cooking oil, and other market staples.",
+    color: "#e5ece0",
+  },
+];

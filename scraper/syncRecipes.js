@@ -1,95 +1,31 @@
-const fs = require("fs");
-const path = require("path");
-const { parse } = require("csv-parse/sync");
-const ws = require("ws");
-const { createClient } = require("@supabase/supabase-js");
-
-require("dotenv").config({
-  path: path.resolve(__dirname, "../.env"),
-});
-
-const supabaseUrl =
-  process.env.SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  console.error(
-    "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required to sync recipes."
-  );
-  process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  realtime: { transport: ws },
-});
-
-const recipes = parse(
-  fs.readFileSync(
-    path.resolve(__dirname, "../datasets/filipino_recipes.csv"),
-    "utf8"
-  ),
-  { columns: true, skip_empty_lines: true }
-);
-
-function paginateRecipes() {
-  const rows = [];
-  const pageSize = 1000;
-
-  return (async () => {
-    for (let offset = 0; ; offset += pageSize) {
-      const { data, error } = await supabase
-        .from("recipes")
-        .select("id, name")
-        .range(offset, offset + pageSize - 1);
-
-      if (error) {
-        throw error;
-      }
-
-      rows.push(...(data || []));
-      if (!data || data.length < pageSize) {
-        return rows;
-      }
-    }
-  })();
-}
-
+const { getClient, fetchAll } = require("./lib/client");
+const { normalizeName } = require("../src/domain/ingredientCatalog.js");
+const source = Object.values(require("../src/data/recipes.json"));
 async function main() {
-  const existing = await paginateRecipes();
-  const existingNames = new Set(existing.map((recipe) => recipe.name));
-  const missing = recipes
-    .filter((recipe) => !existingNames.has(recipe.recipe_name))
-    .map((recipe) => ({
-      name: recipe.recipe_name,
-      prep_time: recipe.prep_time || null,
-      cook_time: recipe.cook_time || null,
-      total_time: recipe.total_time || null,
-      servings: recipe.servings ? parseInt(recipe.servings, 10) : null,
-      instructions: recipe.instructions || null,
+  const client = getClient();
+  const dryRun = process.argv.includes("--dry-run");
+  const current = await fetchAll(client, "recipes", "id,name");
+  const names = new Set(current.map((row) => normalizeName(row.name)));
+  const missing = source
+    .filter((row) => !names.has(normalizeName(row.name)))
+    .map(({ ingredients, instructions, ...row }) => ({
+      ...row,
+      instructions: instructions.join(" | "),
     }));
-
-  console.log(`CSV recipes: ${recipes.length}`);
-  console.log(`Existing recipes: ${existing.length}`);
-  console.log(`Missing recipes: ${missing.length}`);
-
-  if (process.argv.includes("--dry-run") || missing.length === 0) {
-    console.log("Dry run complete. Nothing was inserted.");
-    return;
-  }
-
-  for (let offset = 0; offset < missing.length; offset += 250) {
-    const chunk = missing.slice(offset, offset + 250);
-    const { error } = await supabase.from("recipes").insert(chunk);
-
-    if (error) {
-      throw error;
-    }
-
-    console.log(`Inserted recipes ${offset + 1}-${offset + chunk.length}.`);
+  console.log(
+    `${current.length} database recipes; ${missing.length} unique recipes ${dryRun ? "would be added" : "to add"}.`,
+  );
+  if (dryRun) return;
+  for (let offset = 0; offset < missing.length; offset += 200) {
+    const { error } = await client
+      .from("recipes")
+      .insert(missing.slice(offset, offset + 200));
+    if (error) throw new Error(error.message);
   }
 }
-
-main().catch((error) => {
-  console.error("Could not sync recipes:", error);
-  process.exit(1);
-});
+if (require.main === module)
+  main().catch((error) => {
+    console.error("Recipe sync failed:", error.message);
+    process.exitCode = 1;
+  });
+module.exports = { main };

@@ -1,352 +1,277 @@
-import React, {
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useState,
-  useTransition,
-} from "react";
-import { Alert, Button, Empty, Input, Skeleton } from "antd";
+import { useMemo, useDeferredValue, useState, useEffect } from "react";
+import { useSearchParams, Link } from "react-router-dom";
+import { Alert, Skeleton } from "antd";
 import {
-  AppstoreOutlined,
-  CoffeeOutlined,
-  FireOutlined,
-  GiftOutlined,
-  InboxOutlined,
   SearchOutlined,
-  ShopOutlined,
-  ShoppingOutlined,
-  TagOutlined,
+  ArrowRightOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
-import { supabase } from "../../supabaseClient";
+import { useMarket } from "../../context/MarketContext";
+import domainCosting from "../../domain/costing.js";
+import { CATEGORIES } from "../../domain/categories";
+import { formatDate, isStale } from "../../utils/format";
 import IngredientCard from "../../components/IngredientCard/IngredientCard";
-import PriceHero from "../../components/PriceHero/PriceHero";
 import "./Prices.css";
-
-const categories = [
-  { name: "All", icon: <AppstoreOutlined /> },
-  { name: "Vegetables", icon: <ShoppingOutlined /> },
-  { name: "Meat and Poultry", icon: <FireOutlined /> },
-  { name: "Fish", icon: <ShopOutlined /> },
-  { name: "Spices", icon: <CoffeeOutlined /> },
-  { name: "Fruits", icon: <GiftOutlined /> },
-  { name: "Rice", icon: <InboxOutlined /> },
-  { name: "Pantry", icon: <TagOutlined /> },
-  { name: "Other Commodities", icon: <ShoppingOutlined /> },
-];
-
-const sortOptions = [
-  { value: "name", label: "Name" },
-  { value: "price-low", label: "Lowest price" },
-  { value: "price-high", label: "Highest price" },
-  { value: "best", label: "Best value" },
-  { value: "worst", label: "Highest change" },
-];
-
-const priceSources = [
-  { value: "DA Pricewatch", label: "DA Pricewatch" },
-  { value: "SM Supermarkets", label: "SM Supermarket" },
-];
-
-const getPriceSource = (price) => price.source || "DA Pricewatch";
-
-const getPriceSummary = (ingredient, source) => {
-  const prices = [...(ingredient.prices || [])]
-    .filter((price) =>
-      getPriceSource(price) === source &&
-      Number.isFinite(Number(price.avg_price)) &&
-      Number.isFinite(new Date(price.date).getTime())
-    )
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-  const latestPrice = prices[0];
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-  const last30Days = prices.filter(
-    (price) => new Date(price.date) >= thirtyDaysAgo
-  );
-
-  const averagePrice = last30Days.length > 0
-    ? last30Days.reduce(
-        (sum, price) => sum + Number(price.avg_price),
-        0
-      ) / last30Days.length
-    : null;
-
-  const latestPriceValue = Number(latestPrice?.avg_price || 0);
-  const pricePercentage = averagePrice > 0
-    ? ((latestPriceValue - averagePrice) / averagePrice) * 100
-    : 0;
-
-  return {
-    prices,
-    latestPrice,
-    latestPriceValue,
-    averagePrice,
-    pricePercentage,
-  };
-};
-
-const formatDate = (date) => {
-  if (!date) return "";
-
-  return new Intl.DateTimeFormat("en-PH", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(date));
-};
-
-const Prices = () => {
-  const [category, setCategory] = useState("All");
-  const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("name");
-  const [source, setSource] = useState(priceSources[0].value);
-  const [loading, setLoading] = useState(true);
-  const [ingredients, setIngredients] = useState([]);
-  const [error, setError] = useState("");
-  const [isPending, startTransition] = useTransition();
-  const deferredSearch = useDeferredValue(search);
-
-  const getIngredients = useCallback(async () => {
-    setLoading(true);
-    setError("");
-
-    try {
-      const { data, error: fetchError } = await supabase
-        .from("ingredients")
-        .select(`
-          id,
-          name,
-          unit,
-          category,
-          prices (
-            id,
-            avg_price,
-            date,
-            created_at,
-            location_id,
-            source
-          )
-        `);
-
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      const nextIngredients = data || [];
-      setIngredients(nextIngredients);
-    } catch (fetchError) {
-      console.error("Error fetching ingredients:", fetchError);
-      setIngredients([]);
-      setError("We could not load the latest ingredient prices. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+const { getLatestPrice, PRICE_SOURCES } = domainCosting;
+export default function Prices() {
+  const { priceIndex, loading, error, refresh } = useMarket();
+  const [params, setParams] = useSearchParams();
+  const [limit, setLimit] = useState(24);
+  const query = params.get("q") || "";
+  const category = CATEGORIES.some((c) => c.name === params.get("category"))
+    ? params.get("category")
+    : "All";
+  const source = PRICE_SOURCES.some((s) => s.value === params.get("source"))
+    ? params.get("source")
+    : "best";
+  const sort = params.get("sort") || "name";
+  const deferredQuery = useDeferredValue(query);
+  function update(key, value) {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    setParams(next, { replace: true });
+  }
   useEffect(() => {
-    getIngredients();
-  }, [getIngredients]);
-
-  const preparedIngredients = useMemo(() => {
-    return ingredients.map((ingredient) => ({
-      ingredient,
-      summary: getPriceSummary(ingredient, source),
-    }));
-  }, [ingredients, source]);
-
-  const lastUpdated = useMemo(() => {
-    const timestamps = preparedIngredients.flatMap(({ summary }) =>
-      summary.prices
-        .map((price) => new Date(price.date).getTime())
-        .filter((timestamp) => Number.isFinite(timestamp))
-    );
-
-    return timestamps.length ? new Date(Math.max(...timestamps)) : null;
-  }, [preparedIngredients]);
-
-  const filteredIngredients = useMemo(() => {
-    const query = deferredSearch.trim().toLowerCase();
-
-    return preparedIngredients
-      .filter(({ ingredient, summary }) =>
-        summary.latestPrice &&
-        (ingredient.name || "").toLowerCase().includes(query) &&
-        (category === "All" || ingredient.category === category)
-      )
-      .sort((a, b) => {
-        if (sortBy === "price-low") {
-          return a.summary.latestPriceValue - b.summary.latestPriceValue;
-        }
-
-        if (sortBy === "price-high") {
-          return b.summary.latestPriceValue - a.summary.latestPriceValue;
-        }
-
-        if (sortBy === "best") {
-          return a.summary.pricePercentage - b.summary.pricePercentage;
-        }
-
-        if (sortBy === "worst") {
-          return b.summary.pricePercentage - a.summary.pricePercentage;
-        }
-
-        return (a.ingredient.name || "").localeCompare(b.ingredient.name || "");
-      });
-  }, [category, deferredSearch, preparedIngredients, sortBy]);
-
-  const hasFilters = Boolean(search.trim()) || category !== "All" || sortBy !== "name";
-  const selectedSourceLabel = priceSources.find((item) => item.value === source)?.label || source;
-
-  const clearFilters = () => {
-    setSearch("");
-    setCategory("All");
-    setSortBy("name");
-  };
-
+    setLimit(24);
+  }, [deferredQuery, category, source, sort]);
+  const entries = useMemo(
+    () =>
+      [...priceIndex.values()]
+        .map((entry) => {
+          const price = getLatestPrice(entry, source);
+          if (!price) return null;
+          const history = entry.prices.filter(
+            (p) =>
+              p.source === price.source &&
+              p.ingredientId === price.ingredientId,
+          );
+          const recent = history.filter(
+            (p) => Date.now() - Date.parse(p.date) <= 30 * 86400000,
+          );
+          const byDate = new Map();
+          for (const p of recent)
+            if (
+              !byDate.has(p.date) ||
+              +p.avg_price < +byDate.get(p.date).avg_price
+            )
+              byDate.set(p.date, p);
+          const values = [...byDate.values()];
+          const average = values.length
+            ? values.reduce((sum, p) => sum + Number(p.avg_price), 0) /
+              values.length
+            : null;
+          return {
+            ...entry,
+            price,
+            history,
+            average,
+            change: average
+              ? ((+price.avg_price - average) / average) * 100
+              : 0,
+          };
+        })
+        .filter(Boolean),
+    [priceIndex, source],
+  );
+  const filtered = useMemo(
+    () =>
+      entries
+        .filter(
+          ({ definition }) =>
+            (category === "All" || definition.category === category) &&
+            `${definition.name} ${definition.aliases.join(" ")}`
+              .toLowerCase()
+              .includes(deferredQuery.trim().toLowerCase()),
+        )
+        .sort((a, b) =>
+          sort === "price-low"
+            ? a.price.avg_price - b.price.avg_price
+            : sort === "price-high"
+              ? b.price.avg_price - a.price.avg_price
+              : sort === "best"
+                ? a.change - b.change
+                : a.definition.name.localeCompare(b.definition.name),
+        ),
+    [entries, category, deferredQuery, sort],
+  );
+  const latest = entries
+    .map((entry) => entry.price.date)
+    .sort()
+    .at(-1);
+  const stale = entries.filter((entry) => isStale(entry.price.date)).length;
   return (
-    <main className="prices-page">
-      <PriceHero />
-
-      <section
-        className="prices-content"
-        aria-label="Ingredient prices"
-        aria-busy={loading || isPending}
-      >
-        <div className="controls-container">
-          <div className="price-controls">
-            <Input
-              className="price-search"
-              aria-label="Search ingredients"
-              placeholder="Search ingredients"
-              prefix={<SearchOutlined />}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              allowClear
-            />
-
-            <div className="sort-filters" aria-label="Sort prices">
-              <span className="sort-title">Sort by</span>
-              {sortOptions.map((item) => (
-                <button
-                  type="button"
-                  key={item.value}
-                  className={sortBy === item.value ? "sort-active" : ""}
-                  aria-pressed={sortBy === item.value}
-                  onClick={() => startTransition(() => setSortBy(item.value))}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="source-filters" aria-label="Choose price source">
-            <span className="source-title">Price source</span>
-            <div className="source-switch" role="group">
-              {priceSources.map((item) => (
-                <button
-                  type="button"
-                  key={item.value}
-                  className={source === item.value ? "source-active" : ""}
-                  aria-pressed={source === item.value}
-                  onClick={() => startTransition(() => setSource(item.value))}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="category-filters" aria-label="Filter by category">
-            {categories.map((item) => (
-              <button
-                type="button"
-                key={item.name}
-                className={category === item.name ? "category-active" : ""}
-                aria-pressed={category === item.name}
-                onClick={() => startTransition(() => setCategory(item.name))}
-              >
-                {item.icon}
-                <span>{item.name}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="results-summary" aria-live="polite">
-            <span>
-              {loading
-                ? "Loading prices"
-                : `${filteredIngredients.length} ingredient${filteredIngredients.length === 1 ? "" : "s"}`}
-            </span>
-            {lastUpdated && !loading && (
-              <span>{selectedSourceLabel}: {formatDate(lastUpdated)}</span>
-            )}
-          </div>
+    <main className="page-shell prices-page">
+      <section className="page-intro prices-intro">
+        <div>
+          <span className="eyebrow">
+            <span className="status-dot" /> THE NCR MARKET NOTEBOOK
+          </span>
+          <h1>
+            A smarter trip
+            <br />
+            to the <em>market.</em>
+          </h1>
+          <p>
+            Check ingredient prices before you fill your basket. Compare source
+            quotes, follow price trends, and plan with a clearer picture.
+          </p>
         </div>
-
-        {error && (
-          <div className="price-message">
-            <Alert
-              type="error"
-              showIcon
-              message="Prices are unavailable"
-              description={error}
-            />
-            <Button type="primary" onClick={getIngredients}>
-              Try again
-            </Button>
-          </div>
-        )}
-
-        {!error && loading && (
-          <div className="ingredient-grid" aria-busy="true">
-            {Array.from({ length: 8 }).map((_, index) => (
-              <div className="ingredient-skeleton" key={index}>
-                <Skeleton
-                  active
-                  title={{ width: "60%" }}
-                  paragraph={{ rows: 4 }}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {!error && !loading && filteredIngredients.length === 0 && (
-          <div className="price-message empty-price-state">
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={hasFilters
-                ? "No ingredients match those filters."
-                : `No ${selectedSourceLabel} data is available yet.`}
-            />
-            {hasFilters && (
-              <Button onClick={clearFilters}>Clear filters</Button>
-            )}
-          </div>
-        )}
-
-        {!error && !loading && filteredIngredients.length > 0 && (
-          <div className="ingredient-grid">
-            {filteredIngredients.map(({ ingredient, summary }) => (
-              <IngredientCard
-                key={ingredient.id}
-                name={ingredient.name}
-                category={ingredient.category}
-                unit={ingredient.unit}
-                price={summary.latestPriceValue}
-                averagePrice={summary.averagePrice}
-                priceHistory={summary.prices}
-              />
-            ))}
-          </div>
-        )}
+        <div className="price-intro-note">
+          <span className="price-note-icon">↗</span>
+          <strong>{loading ? "—" : entries.length}</strong>
+          <span>ingredients with price data</span>
+          <small>
+            {loading
+              ? "Loading observations…"
+              : `Latest observation · ${formatDate(latest)}`}
+          </small>
+        </div>
       </section>
+      <div className="price-toolbar">
+        <label className="search-field">
+          <SearchOutlined />
+          <input
+            aria-label="Search ingredients"
+            placeholder="Search ingredients, e.g. garlic or kamatis…"
+            value={query}
+            onChange={(event) => update("q", event.target.value)}
+          />
+        </label>
+        <div className="source-tabs" aria-label="Choose price source">
+          {PRICE_SOURCES.map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              aria-pressed={source === item.value}
+              onClick={() => update("source", item.value)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="category-filters" aria-label="Filter by category">
+        {[
+          { name: "All", label: "All ingredients", emoji: "🧺" },
+          ...CATEGORIES,
+        ].map((item) => (
+          <button
+            key={item.name}
+            type="button"
+            aria-pressed={category === item.name}
+            onClick={() =>
+              update("category", item.name === "All" ? "" : item.name)
+            }
+          >
+            <span aria-hidden="true">{item.emoji}</span>
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <div className="results-summary">
+        <span>
+          {loading
+            ? "Loading your market notebook…"
+            : `${filtered.length} ingredients${category === "All" ? "" : ` in ${category.toLowerCase()}`}`}
+        </span>
+        <label>
+          Sort by{" "}
+          <select
+            aria-label="Sort prices"
+            value={sort}
+            onChange={(event) => update("sort", event.target.value)}
+          >
+            <option value="name">Name A–Z</option>
+            <option value="price-low">Price: low to high</option>
+            <option value="price-high">Price: high to low</option>
+            <option value="best">Below 30-day average</option>
+          </select>
+        </label>
+        <button className="text-link" onClick={refresh} disabled={loading}>
+          <ReloadOutlined spin={loading} /> Refresh
+        </button>
+      </div>
+      {error && (
+        <Alert
+          className="data-warning"
+          type="error"
+          showIcon
+          title={error}
+          action={<button onClick={refresh}>Retry</button>}
+        />
+      )}
+      {!loading && stale > 0 && (
+        <p className="price-freshness-note">
+          {stale} ingredient{stale === 1 ? " has" : "s have"} quotes older than
+          7 days. Each card shows its observation date.
+        </p>
+      )}
+      <div className="ingredient-grid" aria-busy={loading}>
+        {loading
+          ? Array.from({ length: 8 }, (_, i) => (
+              <div className="price-loading-card" key={i}>
+                <Skeleton active paragraph={{ rows: 5 }} />
+              </div>
+            ))
+          : filtered
+              .slice(0, limit)
+              .map(({ definition, price, history, average }) => (
+                <IngredientCard
+                  key={definition.key}
+                  name={definition.name}
+                  category={definition.category}
+                  price={Number(price.avg_price)}
+                  averagePrice={average}
+                  unit={definition.unit}
+                  priceHistory={history}
+                  source={price.source}
+                  reference={price.ingredientName}
+                  rateReference={!!price.reference}
+                  date={price.date}
+                />
+              ))}
+      </div>
+      {!loading && !error && !filtered.length && (
+        <div className="state-message">
+          <h2>No matching prices yet.</h2>
+          <p>
+            Try another ingredient or source. Some foods are not currently
+            listed by DA or SM.
+          </p>
+          <button className="button" onClick={() => setParams({})}>
+            Clear filters
+          </button>
+        </div>
+      )}
+      {!loading && filtered.length > limit && (
+        <div className="load-more">
+          <button
+            className="button"
+            onClick={() => setLimit((value) => value + 24)}
+          >
+            Show more ingredients <ArrowRightOutlined />
+          </button>
+          <span>
+            Showing {Math.min(limit, filtered.length)} of {filtered.length}
+          </span>
+        </div>
+      )}
+      <div className="price-method-note">
+        <div>
+          <strong>A quick note on these numbers</strong>
+          <p>
+            DA Pricewatch shows available NCR market averages. SM shows the
+            lowest matched in-stock product per unit. “Lowest available”
+            compares recent source quotes; it does not include every store or
+            market. Prices are collected on a daily schedule, and collection can
+            be delayed.
+          </p>
+        </div>
+        <Link className="text-link" to="/recipes">
+          Put prices into a recipe <ArrowRightOutlined />
+        </Link>
+      </div>
     </main>
   );
-};
-
-export default Prices;
+}

@@ -23,7 +23,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "comp": "node scripts/create-component.js"
+    "comp": "node scripts/create-component.js",
+    "data:recipes": "node scripts/build-recipe-data.js"
   },
   "eslintConfig": {
     "extends": [
@@ -41,6 +42,15 @@
       "last 1 chrome version",
       "last 1 firefox version",
       "last 1 safari version"
+    ]
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "^react-router/dom$": "<rootDir>/node_modules/react-router/dist/development/dom-export.js",
+      "^(@rc-component/[^/]+)/(locale|generate)/(.+)$": "<rootDir>/node_modules/$1/lib/$2/$3.js"
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!@ant-design/)"
     ]
   }
 }

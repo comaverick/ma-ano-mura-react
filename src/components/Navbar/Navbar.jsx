@@ -1,100 +1,40 @@
-import React from 'react'
-import { Flex, Button } from "antd";
+import { NavLink, Link } from "react-router-dom";
+import { EnvironmentOutlined, ArrowRightOutlined } from "@ant-design/icons";
+import logo from "../../assets/logo.svg";
 import "./Navbar.css";
-import logo from "../../assets/logo.svg"
-import { NavLink, Link, useLocation  } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
-
-const Navbar = () => {
-  const location = useLocation();
-
-  const homeRef = useRef(null);
-  const recipesRef = useRef(null);
-  const pricesRef = useRef(null);
-  const categoriesRef = useRef(null);
-
-  const [indicatorStyle, setIndicatorStyle] = useState({});
-
-  useEffect(() => {
-    let current;
-
-    switch (location.pathname) {
-        case "/":
-            current = homeRef.current;
-            break;
-        case "/recipes":
-            current = recipesRef.current;
-            break;
-        case "/prices":
-            current = pricesRef.current;
-            break;
-        case "/categories":
-            current = categoriesRef.current;
-            break;
-        default:
-            current = homeRef.current;
-    }
-
-    if (current) {
-        setIndicatorStyle({
-          width: current.offsetWidth,
-          height: current.offsetHeight,
-          left: current.offsetLeft,
-          top: current.offsetTop,
-      });
-    }
-  }, [location]);
-  const getNavClass = ({ isActive }) =>
-  isActive ? "nav-link active" : "nav-link";
-
+export default function Navbar() {
   return (
-    <nav className='navbar'>
-      <Flex className='navbar-container' justify="space-between" align="center" >
-
+    <header className="navbar">
+      <nav className="navbar-container" aria-label="Main navigation">
         <Link to="/" className="logo">
-          <img src={logo} alt="Logo" className='logo-image'/>
-          <span className='logo-text'>Ma-Ano-Mura</span>
+          <img src={logo} alt="" />
+          <span>
+            Ma-Ano-Mura<span className="logo-dot">.</span>
+          </span>
         </Link>
-
-        <Flex className='navigation' gap="small">
-          <div ref={homeRef}>
-            <NavLink to="/" className={getNavClass}>
-                Home
+        <div className="navigation">
+          {[
+            ["/", "Home"],
+            ["/recipes", "Recipes"],
+            ["/prices", "Prices"],
+            ["/categories", "Categories"],
+          ].map(([path, label]) => (
+            <NavLink
+              key={path}
+              to={path}
+              end={path === "/"}
+              className={({ isActive }) =>
+                `nav-link${isActive ? " nav-active" : ""}`
+              }
+            >
+              {label}
             </NavLink>
-          </div>
-          
-          <div ref={recipesRef}>
-            <NavLink ref={recipesRef} to="/recipes" className={getNavClass}>
-                Recipes
-            </NavLink>
-          </div>
-
-
-          <div ref={pricesRef}>
-            <NavLink ref={pricesRef} to="/prices" className={getNavClass}>
-                Prices
-            </NavLink>
-          
-          </div>
-
-          <div ref={categoriesRef}>
-            <NavLink ref={categoriesRef} to="/categories" className={getNavClass}>
-                Categories
-            </NavLink>
-          </div>
-          <div className="nav-indicator" style={indicatorStyle}></div>
-        </Flex>
-
-        <div>
-          <Button className='button' variant='outlined' shape='round' icon='📍' 
-          style={{
-            borderColor: "#15803d"
-          }}>NCR Prices</Button>
+          ))}
         </div>
-        
-      </Flex>
-    </nav>
-  )
+        <Link to="/prices" className="nav-location">
+          <EnvironmentOutlined /> NCR, Philippines <ArrowRightOutlined />
+        </Link>
+      </nav>
+    </header>
+  );
 }
-
-export default Navbar
