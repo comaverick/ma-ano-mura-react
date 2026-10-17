@@ -87,8 +87,9 @@ export function KitchenProvider({ children }) {
     );
   }, []);
   const addMeal = useCallback((recipe, date, slot, servings) => {
-    setData((current) =>
-      cleanKitchen({
+    setData((current) => ({
+      ...current,
+      plans: cleanKitchen({
         ...current,
         plans: [
           ...current.plans.filter(
@@ -110,8 +111,8 @@ export function KitchenProvider({ children }) {
               : {}),
           },
         ],
-      }),
-    );
+      }).plans,
+    }));
     setNotice(`${recipe.name} added to ${slot.toLowerCase()} on ${date}.`);
   }, []);
   const removeMeal = useCallback(
@@ -126,12 +127,13 @@ export function KitchenProvider({ children }) {
   );
   const setBudget = useCallback(
     (week, amount) =>
-      setData((current) =>
-        cleanKitchen({
+      setData((current) => ({
+        ...current,
+        budgets: cleanKitchen({
           ...current,
           budgets: { ...current.budgets, [week]: amount },
-        }),
-      ),
+        }).budgets,
+      })),
     [],
   );
   const value = useMemo(
