@@ -22,10 +22,11 @@ jobs:
       SUPABASE_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
       # Optional: use this when database RLS restricts catalog/price writes.
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      SCRAPER_OUTPUT_DIR: ${{ runner.temp }}/ingredient-prices
       PUPPETEER_SKIP_DOWNLOAD: "true"
     steps:
       - uses: actions/checkout@v4
+      - name: Configure report directory
+        run: echo "SCRAPER_OUTPUT_DIR=$RUNNER_TEMP/ingredient-prices" >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
