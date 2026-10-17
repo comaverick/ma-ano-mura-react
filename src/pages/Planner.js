@@ -17,12 +17,14 @@ import { useKitchen } from "../context/KitchenContext";
 import planning from "../domain/planning.js";
 import catalogDomain from "../domain/ingredientCatalog.js";
 import costing from "../domain/costing.js";
+import measurementsDomain from "../domain/measurements.js";
 import {
   formatMoney,
   formatShoppingQuantity,
   formatDate,
 } from "../utils/format";
 import "./Planner.css";
+import PackageEstimate from "../components/PackageEstimate";
 const {
   recipeKey,
   recipeForPlan,
@@ -95,11 +97,17 @@ export default function Planner() {
   const [copyStatus, setCopyStatus] = useState("");
   const baseCosts = useMemo(
     () =>
-      recipes.map((recipe) => ({
-        recipe,
-        baseCost: priceRecipe(recipe, priceIndex, source),
-      })),
-    [recipes, priceIndex, source],
+      recipes.map((raw) => {
+        const recipe = measurementsDomain.withMeasurements(
+          raw,
+          kitchen.measurements,
+        );
+        return {
+          recipe,
+          baseCost: priceRecipe(recipe, priceIndex, source),
+        };
+      }),
+    [recipes, priceIndex, source, kitchen.measurements],
   );
   const assessed = useMemo(
     () =>
@@ -161,8 +169,16 @@ export default function Planner() {
       buildShoppingList(weekPlans, recipes, priceIndex, {
         pantry: kitchen.pantry,
         source,
+        measurements: kitchen.measurements,
       }),
-    [weekPlans, recipes, priceIndex, kitchen.pantry, source],
+    [
+      weekPlans,
+      recipes,
+      priceIndex,
+      kitchen.pantry,
+      source,
+      kitchen.measurements,
+    ],
   );
   const recipeLookup = new Map(
     recipes.map((recipe) => [recipeKey(recipe), recipe]),
@@ -716,6 +732,13 @@ export default function Planner() {
                     Costs cover the amounts needed. Whole packs, water and
                     unmeasured seasonings may add to your checkout total.
                   </p>
+                  {tab === "list" && (
+                    <PackageEstimate
+                      list={list}
+                      source={source}
+                      budget={kitchen.budgets[week]}
+                    />
+                  )}
                   {tab === "week" ? (
                     <>
                       <div className="planner-days">
@@ -735,8 +758,14 @@ export default function Planner() {
                                 (item) =>
                                   item.date === date && item.slot === slot,
                               );
-                              const recipe =
+                              const rawRecipe =
                                 plan && recipeForPlan(plan, recipeLookup);
+                              const recipe =
+                                rawRecipe &&
+                                measurementsDomain.withMeasurements(
+                                  rawRecipe,
+                                  kitchen.measurements,
+                                );
                               const cost = recipe
                                 ? assessRecipe(recipe, priceIndex, {
                                     servings: plan.servings,

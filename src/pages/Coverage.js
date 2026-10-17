@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Alert, Skeleton } from "antd";
 import { useMarket } from "../context/MarketContext";
 import coverage from "../domain/coverage.js";
-import { formatDate } from "../utils/format";
+import { formatDate, formatSource } from "../utils/format";
 import "./Coverage.css";
 const reasons = {
   "no-price": "Missing price",
@@ -11,8 +11,17 @@ const reasons = {
   unmatched: "Ingredient match",
 };
 export default function Coverage() {
-  const { recipes, priceIndex, loading, recipesLoading, error, refresh } =
-    useMarket();
+  const {
+    recipes,
+    priceIndex,
+    loading,
+    recipesLoading,
+    error,
+    refresh,
+    marketSnapshot,
+    packageError,
+    refreshPackages,
+  } = useMarket();
   const [reason, setReason] = useState("all");
   const [limit, setLimit] = useState(20);
   const report = useMemo(
@@ -79,6 +88,9 @@ export default function Coverage() {
           </p>
           <section className="coverage-sources">
             {Object.entries(report.sources).map(([source, data]) => {
+              const attempt = marketSnapshot?.sources?.find(
+                (item) => item.source === source,
+              );
               const old =
                 !data.latest ||
                 Date.now() - Date.parse(data.latest) > 3 * 86400000;
@@ -89,7 +101,7 @@ export default function Coverage() {
                       ? "Source needs a refresh"
                       : "Recent observations available"}
                   </span>
-                  <h2>{source}</h2>
+                  <h2>{formatSource(source)}</h2>
                   <strong>{data.ingredients} ingredients</strong>
                   <p>Latest quote: {formatDate(data.latest)}</p>
                   <small>
@@ -97,10 +109,56 @@ export default function Coverage() {
                     available data; it doesn’t confirm that today’s collection
                     succeeded.
                   </small>
+                  {attempt && (
+                    <div className="coverage-source-attempt">
+                      <p>
+                        Last collection report:{" "}
+                        {formatDate(attempt.attemptedAt)}
+                      </p>
+                      <strong>
+                        {attempt.collection === "success"
+                          ? "Collection completed"
+                          : "Collection needs attention"}
+                      </strong>
+                      <p>
+                        {attempt.method}
+                        {attempt.reportDate
+                          ? ` · report dated ${formatDate(attempt.reportDate)}`
+                          : ""}
+                      </p>
+                      {attempt.reportDate &&
+                        attempt.reportDate < marketSnapshot.date && (
+                          <p>
+                            Uses an earlier published report. Its prices keep
+                            the report date.
+                          </p>
+                        )}
+                      {attempt.evidenceUrl && (
+                        <a
+                          className="text-link"
+                          href={attempt.evidenceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          View source evidence ↗
+                        </a>
+                      )}
+                      {attempt.error && <small>{attempt.error}</small>}
+                    </div>
+                  )}
                 </article>
               );
             })}
           </section>
+          {packageError && (
+            <p className="coverage-note">
+              Daily collection evidence could not be loaded. Quote dates above
+              still reflect the saved prices.{" "}
+              <button className="text-link" onClick={refreshPackages}>
+                Retry collection details
+              </button>
+            </p>
+          )}
           <div className="section-heading">
             <div>
               <span className="eyebrow">THE MOST USEFUL GAPS TO CLOSE</span>

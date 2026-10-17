@@ -11,12 +11,20 @@ import {
 import { useMarket } from "../context/MarketContext";
 import domainCosting from "../domain/costing.js";
 import { CATEGORIES } from "../domain/categories";
-import { formatMoney, formatDate, isStale } from "../utils/format";
+import {
+  formatMoney,
+  formatDate,
+  isStale,
+  formatSource,
+} from "../utils/format";
 import RecipeCard from "../components/RecipeCard/RecipeCard";
 import adobo from "../assets/adobo.png";
 import "./Home.css";
+import { useKitchen } from "../context/KitchenContext";
+import measurementsDomain from "../domain/measurements.js";
 const { getLatestPrice, priceRecipe } = domainCosting;
 export default function Home() {
+  const { measurements } = useKitchen();
   const { recipes, priceIndex, loading, recipesLoading, error, refresh } =
     useMarket();
   const [query, setQuery] = useState("");
@@ -56,7 +64,12 @@ export default function Home() {
     .sort()
     .at(-1);
   const pricedCount = observed.length;
-  const heroCost = featured[0] ? priceRecipe(featured[0], priceIndex) : null;
+  const heroCost = featured[0]
+    ? priceRecipe(
+        measurementsDomain.withMeasurements(featured[0], measurements),
+        priceIndex,
+      )
+    : null;
   function search(event) {
     event.preventDefault();
     navigate(`/${searchType}?q=${encodeURIComponent(query.trim())}`);
@@ -181,7 +194,7 @@ export default function Home() {
             <strong>
               2<span> trusted sources</span>
             </strong>
-            <span>DA Pricewatch + SM Supermarkets</span>
+            <span>DA market monitoring + SM Supermarkets</span>
           </div>
           <div className="home-stat-note">
             <LineChartOutlined />
@@ -283,7 +296,7 @@ export default function Home() {
                       <small> / {definition.unit}</small>
                     </strong>
                     <p>
-                      {price.source} · {formatDate(price.date)}
+                      {formatSource(price.source)} · {formatDate(price.date)}
                     </p>
                   </Link>
                 ))}

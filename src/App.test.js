@@ -164,6 +164,41 @@ test("shopping check-offs are separate for different weeks with identical ingred
     screen.getByRole("checkbox", { name: /Tomato 500 g/ }),
   ).not.toBeChecked();
 });
+test("user-supplied frying oil measurements complete estimates and remain in the saved shopping plan", () => {
+  mockMarket.recipes[0].ingredients.push("Oil for frying");
+  mockMarket.ingredients.push({
+    id: "oil",
+    name: "Vegetable Oil",
+    unit: "L",
+    prices: [{ avg_price: 100, date: "2026-10-17", source: "SM Supermarkets" }],
+  });
+  mockMarket.priceIndex = costing.createPriceIndex(mockMarket.ingredients);
+  window.history.replaceState({}, "", "/recipes?recipe=adobo");
+  render(<App />);
+  const row = screen
+    .getByText("Oil for frying")
+    .closest(".recipe-ingredient-row");
+  fireEvent.click(within(row).getByRole("button", { name: "Set my quantity" }));
+  fireEvent.change(screen.getByLabelText("Your quantity for Vegetable Oil"), {
+    target: { value: "2" },
+  });
+  fireEvent.change(screen.getByLabelText("Your unit for Vegetable Oil"), {
+    target: { value: "tbsp" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Save quantity" }));
+  expect(within(row).getByText(/Your measurement: 2 tbsp/)).toBeInTheDocument();
+  expect(screen.getByText("ESTIMATED INGREDIENT COST")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Plan this meal" }));
+  fireEvent.click(screen.getByRole("button", { name: "Add to plan" }));
+  fireEvent.click(screen.getByRole("link", { name: "View meal plan →" }));
+  fireEvent.click(screen.getByRole("button", { name: "Shopping list" }));
+  expect(screen.getByText("29.57 ml")).toBeInTheDocument();
+  expect(
+    JSON.parse(localStorage.getItem(planning.STORAGE_KEY)).measurements[
+      "chicken adobo"
+    ]["ingredient-3"].quantity,
+  ).toBe(2);
+});
 test("recipe favorites and dated meal selection appear in the weekly planner", () => {
   window.history.replaceState({}, "", "/recipes?recipe=adobo");
   render(<App />);

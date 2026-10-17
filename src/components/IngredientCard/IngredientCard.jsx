@@ -5,7 +5,12 @@ import {
   ArrowUpOutlined,
   ArrowRightOutlined,
 } from "@ant-design/icons";
-import { formatMoney, formatDate, isStale } from "../../utils/format";
+import {
+  formatMoney,
+  formatDate,
+  isStale,
+  formatSource,
+} from "../../utils/format";
 import "./IngredientCard.css";
 function chartPoints(history) {
   const values = history.map((item) => Number(item.avg_price));
@@ -70,6 +75,12 @@ export default function IngredientCard({
   reference,
   rateReference = false,
   date,
+  estimated = false,
+  estimateReason,
+  product,
+  productUrl,
+  unitPriceLow,
+  unitPriceHigh,
 }) {
   const [open, setOpen] = useState(false);
   const history = useMemo(() => {
@@ -118,6 +129,11 @@ export default function IngredientCard({
         {rateReference && (
           <span className="ingredient-reference">Reference: {reference}</span>
         )}
+        {estimated && (
+          <span className="ingredient-reference">
+            Conservative estimate · package conversion
+          </span>
+        )}
         <PriceChart history={recent} />
         <div className="ingredient-card-average">
           <span>30-day average</span>
@@ -127,7 +143,7 @@ export default function IngredientCard({
         </div>
         <div className="ingredient-card-source">
           <span>
-            {source === "DA Pricewatch" ? "DA Pricewatch" : "SM Supermarket"}
+            {source === "DA Pricewatch" ? "DA market prices" : "SM Supermarket"}
           </span>
           <ArrowRightOutlined />
         </div>
@@ -167,8 +183,30 @@ export default function IngredientCard({
           </div>
         </div>
         <p className="ingredient-modal-source">
-          {source} · {reference} · {formatDate(date)}
+          {formatSource(source)} · {reference} · {formatDate(date)}
         </p>
+        {product && (
+          <p className="ingredient-modal-source">
+            Matched product: {product}
+            {productUrl && (
+              <>
+                {" "}
+                ·{" "}
+                <a href={productUrl} target="_blank" rel="noreferrer">
+                  View SM product ↗
+                </a>
+              </>
+            )}
+          </p>
+        )}
+        {estimated && (
+          <p className="ingredient-modal-source">
+            {estimateReason || "Source package conversion is approximate"}.
+            {unitPriceLow && unitPriceHigh
+              ? ` Labelled-weight range: ${formatMoney(unitPriceLow)}–${formatMoney(unitPriceHigh)} / ${unit}. The planning price uses the upper bound.`
+              : ""}
+          </p>
+        )}
         {isStale(date) && (
           <p className="stale-note">
             This quote is more than 7 days old. The current store or market

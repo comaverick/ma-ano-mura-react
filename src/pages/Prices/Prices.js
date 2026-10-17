@@ -128,6 +128,11 @@ export default function Prices() {
           </small>
         </div>
       </section>
+      <p className="planner-hint">
+        SM products with labelled weight ranges use the minimum stated weight
+        for a conservative unit estimate. Package details explain the range;
+        actual weighed prices may differ.
+      </p>
       <div className="price-toolbar">
         <label className="search-field">
           <SearchOutlined />
@@ -229,6 +234,12 @@ export default function Prices() {
                   reference={price.ingredientName}
                   rateReference={!!price.reference}
                   date={price.date}
+                  estimated={!!price.estimated}
+                  estimateReason={price.estimateReason}
+                  product={price.product}
+                  productUrl={price.productUrl}
+                  unitPriceLow={price.unitPriceLow}
+                  unitPriceHigh={price.unitPriceHigh}
                 />
               ))}
       </div>

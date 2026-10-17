@@ -18,9 +18,13 @@ import {
   formatDate,
   formatQuantity,
   isStale,
+  formatSource,
 } from "../utils/format";
 import "./Recipes.css";
 import RecipeActions from "../components/RecipeActions";
+import IngredientMeasurement from "../components/IngredientMeasurement";
+import { useKitchen } from "../context/KitchenContext";
+import measurementsDomain from "../domain/measurements.js";
 const { priceRecipe, PRICE_SOURCES } = domainCosting;
 const statusLabels = {
   unmatched: "Ingredient not matched",
@@ -31,6 +35,7 @@ const statusLabels = {
   priced: "Included",
 };
 export default function Recipes() {
+  const { measurements } = useKitchen();
   const {
     recipes,
     recipesLoading,
@@ -106,9 +111,15 @@ export default function Recipes() {
   const recipe = useMemo(
     () =>
       selected
-        ? { ...selected, ingredients: detailOverride || selected.ingredients }
+        ? measurementsDomain.withMeasurements(
+            {
+              ...selected,
+              ingredients: detailOverride || selected.ingredients,
+            },
+            measurements,
+          )
         : null,
-    [selected, detailOverride],
+    [selected, detailOverride, measurements],
   );
   const cost = useMemo(
     () => (recipe ? priceRecipe(recipe, priceIndex, source, servings) : null),
@@ -407,9 +418,14 @@ export default function Recipes() {
                                 ? `${row.conversion.reason}. `
                                 : ""}
                               {row.price
-                                ? `${row.price.source} · ${row.price.ingredientName} · ${formatDate(row.price.date)}`
+                                ? `${formatSource(row.price.source)} · ${row.price.ingredientName} · ${formatDate(row.price.date)}`
                                 : statusLabels[row.status]}
                             </small>
+                            <IngredientMeasurement
+                              key={`${selectedId}:${row.id}`}
+                              recipe={recipe}
+                              row={row}
+                            />
                           </div>
                           <div className="recipe-ingredient-price">
                             <strong>
@@ -432,8 +448,10 @@ export default function Recipes() {
                       Costs use the amount needed, rather than the price of a
                       whole pack. Cup, piece, and density conversions are
                       approximate where indicated. Water and seasonings without
-                      quantities are excluded. “Lowest available” uses the
-                      lowest recent quote across the two sources.
+                      quantities are excluded. Variable-weight SM packages use a
+                      conservative unit estimate based on their minimum stated
+                      weight. “Lowest available” uses the lowest recent quote
+                      across the two sources.
                     </p>
                   </section>
                   {recipe.instructions?.length > 0 && (

@@ -8,10 +8,16 @@ import { useMarket } from "../../context/MarketContext";
 import domainCosting from "../../domain/costing.js";
 import { formatMoney, formatTime } from "../../utils/format";
 import "./RecipeCard.css";
+import { useKitchen } from "../../context/KitchenContext";
+import measurementsDomain from "../../domain/measurements.js";
 const { priceRecipe } = domainCosting;
 export default function RecipeCard({ recipe, index = 0 }) {
   const { priceIndex, loading } = useMarket();
-  const cost = priceRecipe(recipe, priceIndex);
+  const { measurements } = useKitchen();
+  const cost = priceRecipe(
+    measurementsDomain.withMeasurements(recipe, measurements),
+    priceIndex,
+  );
   const emoji = /chicken|manok/i.test(recipe.name)
     ? "🍗"
     : /pork|baboy/i.test(recipe.name)

@@ -5,11 +5,35 @@ function parsePackage(name) {
     .toLowerCase()
     .replace(/,/g, "");
   const number = "(?:\\d+\\s+\\d+/\\d+|\\d+/\\d+|\\d+(?:\\.\\d+)?)";
-  // A range is a variable-weight item: never present its midpoint as an exact quote.
+  // Use the minimum labelled weight for a conservative unit-price estimate.
+  // Keep both bounds; never turn a midpoint into an exact observation.
+  const range = text.match(
+    new RegExp(
+      `(${number})\\s*(kg|g|ml|l)?\\s*(?:[-–]|to)\\s*(${number})\\s*(kg|g|ml|l)\\b`,
+    ),
+  );
+  if (range) {
+    const unit = range[2] || range[4];
+    if (range[2] && range[2] !== range[4])
+      return { reason: "Mixed-unit variable package range" };
+    const low = parseQuantity(range[1]),
+      high = parseQuantity(range[3]);
+    return low > 0 && high >= low
+      ? {
+          quantity: low,
+          maxQuantity: high,
+          unit,
+          estimated: true,
+          variable: true,
+        }
+      : { reason: "Invalid variable package weight" };
+  }
   if (
-    new RegExp(`${number}\\s*(?:kg|g|ml|l|oz)\\s*[-–]\\s*${number}`).test(text)
+    new RegExp(
+      `${number}\\s*(?:kg|g|ml|l|oz)\\s*(?:[-–]|to)\\s*${number}`,
+    ).test(text)
   )
-    return { reason: "Variable package weight" };
+    return { reason: "Unsupported variable package weight" };
   const match = text.match(
     new RegExp(
       `(?<![\\d/])(${number})\\s*(fl\\.?\\s*oz|kg|kilograms?|grams?|g|ml|liters?|litres?|l|ounces?|oz|lbs?|pounds?|gallons?)\\b`,
@@ -114,6 +138,18 @@ function normalizeProductPrice(product, definition) {
     unit: definition.unit,
     package: pack,
     estimated,
+    ...(pack.variable
+      ? {
+          variable: true,
+          unitPriceLow: Number(
+            (price / ((baseAmount * pack.maxQuantity) / pack.quantity)).toFixed(
+              4,
+            ),
+          ),
+          unitPriceHigh: Number(unitPrice.toFixed(4)),
+          estimateReason: "Uses the minimum stated package weight",
+        }
+      : {}),
   };
 }
 module.exports = { parsePackage, normalizeProductPrice };

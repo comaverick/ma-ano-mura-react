@@ -24,7 +24,7 @@ export default function Footer() {
         </Link>
       </div>
       <p className="footer-note">
-        NCR price estimates from DA Pricewatch & SM Supermarkets.
+        NCR estimates from DA market monitoring & SM Supermarkets.
         <br />
         Prices vary by market and store. Check each quote’s date.
       </p>

@@ -4,6 +4,13 @@ const {
   hasPhrase,
 } = require("../../src/domain/ingredientCatalog.js");
 const rules = {
+  chicharon: {
+    exclude: /vegetable|veggie|marty|fish|chicken|bulaklak|intestine/,
+  },
+  chorizo: { exclude: /macao|macau|cebu|bilbao|bilboa|debilbao|debilboa/ },
+  "ground pork": {
+    exclude: /beef|chicken|mix|seasoned|flavor|ginisa|cooked|ready/,
+  },
   "pork chops": {
     exclude: /marinated|breaded|seasoned|sauce|ready|cooked|tocino/,
   },
@@ -19,7 +26,7 @@ const rules = {
   },
   honey: {
     exclude:
-      /oat|quaker|banana|yuzu|sip plus|nectar|beverage|sauce|mustard|marinade|bbq|tea|drink|dressing|roasted/,
+      /oat|quaker|banana|yuzu|sip plus|nectar|beverage|sauce|mustard|marinade|bbq|tea|drink|dressing|roasted|honey ?dew|melon/,
   },
   hotdog: { exclude: /bun|bread|sandwich/ },
   bacon: { exclude: /pasta|noodle|sauce|bread|bun/ },
@@ -45,7 +52,10 @@ const rules = {
   },
   garlic: { exclude: /powder|bread|sauce|dressing|fried|longg?ani|sausage/ },
   ginger: { exclude: /powder|tea|drink|sauce/ },
-  "white onion": { exclude: /powder|red onion|bread|rings|mayo/ },
+  "white onion": {
+    exclude:
+      /powder|red onion|onion red|onion green|onion spring|leeks?|bread|rings|mayo/,
+  },
   "red onion": { exclude: /powder|bread|rings|mayo/ },
   tomato: { exclude: /sauce|paste|ketchup|catsup|juice|sardine|tuna/ },
   "bell pepper": { exclude: /powder|sauce|relish/ },
@@ -107,6 +117,8 @@ const rules = {
   },
 };
 const reverseAliases = {
+  "red onion": ["onion red"],
+  "white onion": ["onion white", "onion yellow"],
   "garlic powder": ["powder garlic"],
   "onion powder": ["powder onion"],
   "chicken cubes": ["cubes chicken", "cube chicken"],
@@ -236,6 +248,9 @@ function matchProduct(product) {
           "hotdog",
           "bacon",
           "chorizo",
+          "chorizo de bilbao",
+          "chorizo macao",
+          "chorizo cebu",
           "ham",
           "chinese sausage",
           "chicken egg",
@@ -279,9 +294,16 @@ function matchProduct(product) {
     )
       continue;
     if (
-      ["hotdog", "bacon", "ham", "chorizo", "chinese sausage"].includes(
-        definition.key,
-      ) &&
+      [
+        "hotdog",
+        "bacon",
+        "ham",
+        "chorizo",
+        "chorizo de bilbao",
+        "chorizo macao",
+        "chorizo cebu",
+        "chinese sausage",
+      ].includes(definition.key) &&
       /\b(pasta|noodle|ramyun|ramen|bread|bun|buns|roll|rolls|sandwich|sauce|soup)\b/.test(
         text,
       )
@@ -305,7 +327,7 @@ function matchProduct(product) {
     if (rules[definition.key]?.exclude?.test(text)) continue;
     if (
       definition.category === "Spices" &&
-      /\b(noodle|noodles|ramen|ramyun|soup|pasta|pstasce|marinade|dressing|salad|shots|sauce|flavor|flavour)\b/.test(
+      /\b(noodle|noodles|ramen|ramyun|soup|pasta|pstasce|marinade|dressing|salad|shots|sauce|flavor|flavour|tea|drink|beverage|juice|capsules?|supplement|coffee)\b/.test(
         text,
       )
     )

@@ -130,11 +130,15 @@ async function collectProducts({
   // Recipe-driven searches reach goods outside the old category list (juice,
   // herbs, noodles) without relaxing ingredient identity checks.
   const { matchProduct } = require("./lib/productMatching");
+  const { normalizeProductPrice } = require("./lib/priceNormalization");
+  const usableKey = (product) => {
+    const definition = matchProduct(product);
+    return definition && !normalizeProductPrice(product, definition).reason
+      ? definition.key
+      : null;
+  };
   const matchedKeys = new Set(
-    [...products.values()]
-      .map(matchProduct)
-      .filter(Boolean)
-      .map((item) => item.key),
+    [...products.values()].map(usableKey).filter(Boolean),
   );
   const usage = new Map();
   for (const recipe of Object.values(require("../src/data/recipes.json")))
@@ -147,13 +151,36 @@ async function collectProducts({
     .sort((a, b) => (usage.get(b.key) || 0) - (usage.get(a.key) || 0))
     .slice(0, searchLimit);
   await mapLimit(searches, 3, async (item) => {
-    try {
-      await collect({
-        name: `Search: ${item.name}`,
-        search: item.aliases[1] || item.name,
-      });
-    } catch (error) {
-      failures.push({ category: item.name, error: error.message });
+    const targeted = {
+      "green chili": ["siling haba", "chili green"],
+      "green onion": ["spring onion", "green onion"],
+      "ground pork": ["ground pork", "pork giniling"],
+      lemongrass: ["tanglad", "lemon grass"],
+    };
+    for (const term of targeted[item.key] ||
+      [...new Set([item.name, item.aliases[1]])].filter(Boolean).slice(0, 2)) {
+      if (Date.now() - startedAt > budgetMs) {
+        failures.push({
+          category: item.name,
+          error: "Collection time budget reached",
+        });
+        break;
+      }
+      try {
+        await collect({ name: `Search: ${item.name}`, search: term });
+        if (
+          [...products.values()].some(
+            (product) => usableKey(product) === item.key,
+          )
+        )
+          break;
+      } catch (error) {
+        failures.push({
+          category: item.name,
+          search: term,
+          error: error.message,
+        });
+      }
     }
   });
   if (failures.length)

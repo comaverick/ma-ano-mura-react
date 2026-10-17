@@ -3,6 +3,9 @@
  * (e.g. coconut cream/milk, long beans/green beans) deliberately stay separate.
  */
 const definitions = [
+  ["Melon", "Fruits", "kg", "honeydew|honey dew|cantaloupe"],
+  ["Pork Sirloin", "Meat and Poultry", "kg", "pork sirloin|sirloin pork"],
+  ["Pork Loin", "Meat and Poultry", "kg", "pork loin|loin pork"],
   ["Pork Chops", "Meat and Poultry", "kg", "pork chop|pork chops"],
   ["Beef Chuck", "Meat and Poultry", "kg", "beef chuck|chuck beef"],
   ["Beef Sirloin", "Meat and Poultry", "kg", "beef sirloin|sirloin beef"],
@@ -134,7 +137,7 @@ const definitions = [
     "Green Onion",
     "Spices",
     "kg",
-    "spring onion|scallion|green onions|onion leek",
+    "spring onion|scallion|green onions|onion spring|onion green|dahon ng sibuyas|sibuyas dahon",
     100,
     15,
   ],
@@ -290,7 +293,7 @@ const definitions = [
     "Green Chili",
     "Spices",
     "kg",
-    "finger chili|green finger chili|green chili pepper|long green pepper|long green chili|siling haba|green chily|long green chily|finger chilies|green chilies|siling pangsigang",
+    "finger chili|green finger chili|green chili pepper|long green pepper|long green chili|siling haba|green chily|long green chily|finger chilies|green chilies|siling pangsigang|siling panigang|siling sigang|chili green|chilli green",
     75,
     15,
   ],
@@ -350,7 +353,7 @@ const definitions = [
     "Ground Pork",
     "Meat and Poultry",
     "kg",
-    "pork ground|minced pork|pork mince",
+    "pork ground|minced pork|pork mince|pork giniling|giniling na baboy|pork minced",
     225,
   ],
   ["Beef", "Meat and Poultry", "kg", "beef meat"],
@@ -371,11 +374,28 @@ const definitions = [
   ],
   ["Hotdog", "Meat and Poultry", "kg", "hot dog|hotdogs|frankfurter", 140, 40],
   ["Bacon", "Meat and Poultry", "kg", "bacon strips", 100, 15],
+  ["Chorizo", "Meat and Poultry", "kg", "chorizo sausage", 150, 50],
   [
-    "Chorizo",
+    "Chorizo De Bilbao",
     "Meat and Poultry",
     "kg",
-    "chorizo de bilbao|chorizo bilbao",
+    "chorizo bilbao|chorizo de bilbao|chorizo debilbao|chorizo bilboa|chorizo bilboa style|chorizo bilbao style|chorizo debilboa",
+    150,
+    50,
+  ],
+  [
+    "Chorizo Macao",
+    "Meat and Poultry",
+    "kg",
+    "macao chorizo|chorizo macao|macao sausage",
+    150,
+    50,
+  ],
+  [
+    "Chorizo Cebu",
+    "Meat and Poultry",
+    "kg",
+    "cebu chorizo|chorizo cebu|chorizo de cebu",
     150,
     50,
   ],
@@ -652,7 +672,7 @@ function normalizeName(value) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/&/g, " and ")
-    .replace(/\bchilies\b/g, "chili")
+    .replace(/\b(?:chilies|chillies|chilli)\b/g, "chili")
     .replace(/[^a-z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();

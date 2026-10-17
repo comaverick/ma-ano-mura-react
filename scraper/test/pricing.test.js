@@ -172,10 +172,20 @@ test("package normalization uses the declared unit and handles multipacks once",
   );
   assert.equal(parsePackage("Mix | 8g x 16").quantity, 128);
   assert.equal(parsePackage("Wrapper | 1kg 60pcs").quantity, 1);
-  assert.equal(
-    parsePackage("Fish | 400g-500g").reason,
-    "Variable package weight",
-  );
+  assert.deepEqual(parsePackage("Fish | 400g-500g"), {
+    quantity: 400,
+    maxQuantity: 500,
+    unit: "g",
+    estimated: true,
+    variable: true,
+  });
+  assert.deepEqual(parsePackage("Fish | 2to3kg"), {
+    quantity: 2,
+    maxQuantity: 3,
+    unit: "kg",
+    estimated: true,
+    variable: true,
+  });
   assert.ok(
     normalizeProductPrice({ name: "Lemon | 3pcs", price: 80 }, def("lemon"))
       .reason,
@@ -302,7 +312,7 @@ test("catalog keys are unique and numeric conversion metadata is positive", () =
 });
 
 test("a lost insert response is reconciled before retrying and reruns stay idempotent", async () => {
-  const { writePrices, LOCATION_ID } = require("../lib/persistence");
+  const { writePrices, SM_LOCATION_ID } = require("../lib/persistence");
   const saved = [];
   let insertCalls = 0;
   let loseResponse = true;
@@ -345,7 +355,7 @@ test("a lost insert response is reconciled before retrying and reruns stay idemp
   const rows = [
     {
       ingredient_id: "soy",
-      location_id: LOCATION_ID,
+      location_id: SM_LOCATION_ID,
       avg_price: 80,
       date: "2026-10-16",
       source: "SM Supermarkets",

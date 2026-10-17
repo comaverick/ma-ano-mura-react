@@ -1,10 +1,16 @@
 const fs = require("fs");
 const path = require("path");
-const { getClient, ensureCatalog, writePrices } = require("./lib/persistence");
+const {
+  getClient,
+  ensureCatalog,
+  writePrices,
+  ensureSMLocation,
+} = require("./lib/persistence");
 const { prepareSMPrices } = require("./lib/smPipeline");
 async function main() {
   const dryRun = process.argv.includes("--dry-run");
   const client = getClient();
+  await ensureSMLocation(client, { dryRun });
   const dir = process.env.SCRAPER_OUTPUT_DIR || __dirname;
   const { ingredients } = await ensureCatalog(client, { dryRun });
   const products = JSON.parse(

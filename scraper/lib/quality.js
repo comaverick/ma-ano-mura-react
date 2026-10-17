@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { validPrice } = require("../../src/domain/costing.js");
 const { manilaDate } = require("./persistence");
+const reviewedTransitions = require("../data/reviewed-price-transitions.json");
 function evaluateQuality({
   report,
   prices,
@@ -11,6 +12,7 @@ function evaluateQuality({
   minCoverage = 70,
   maxDrop = 5,
   maxSourceAge = 2,
+  reviews = reviewedTransitions,
 }) {
   const errors = [],
     warnings = [],
@@ -97,9 +99,29 @@ function evaluateQuality({
         percent: Number(((ratio - 1) * 100).toFixed(1)),
       });
   }
-  if (changes.length)
+  for (const change of changes) {
+    const review = reviews.find(
+      (item) =>
+        item.ingredient === change.ingredient &&
+        item.source === change.source &&
+        item.date === change.date &&
+        item.previousDate === change.previousDate &&
+        item.previous === change.previous &&
+        item.current === change.current,
+    );
+    if (review) {
+      change.reviewed = true;
+      change.evidence = review.evidence;
+      change.reviewReason = review.reason;
+      warnings.push(
+        `${change.ingredient}: exact price transition reviewed against its source package; see the evidence link in the report.`,
+      );
+    }
+  }
+  const unreviewed = changes.filter((change) => !change.reviewed);
+  if (unreviewed.length)
     errors.push(
-      `${changes.length} ingredient/source quotes changed by at least 2× or fell by at least 50%; review source products and unit conversions.`,
+      `${unreviewed.length} ingredient/source quotes changed by at least 2× or fell by at least 50%; review source products and unit conversions.`,
     );
   return {
     date,
@@ -167,8 +189,13 @@ function writeQualityReport(quality, report, dir) {
         .slice(0, 30)
         .map(
           (change) =>
-            `| ${safe(change.ingredient)} | ${safe(change.source)} | ${change.previous} | ${change.current} | ${change.percent}% |`,
+            `| ${safe(change.ingredient)}${change.reviewed ? " (reviewed)" : ""} | ${safe(change.source)} | ${change.previous} | ${change.current} | ${change.percent}% |`,
         ),
+    );
+  for (const change of quality.changes.filter((item) => item.reviewed))
+    lines.push(
+      "",
+      `Reviewed ${safe(change.ingredient)}: ${change.reviewReason} [Source evidence](${change.evidence}).`,
     );
   lines.push(
     "",

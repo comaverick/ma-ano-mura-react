@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: daily-ingredient-prices
@@ -35,6 +35,12 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --ignore-scripts
         working-directory: scraper
+      - name: Ensure official DA PDF text extraction is available
+        run: |
+          if ! command -v pdftotext >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y poppler-utils
+          fi
       - name: Check matching, quantities, and source parsers
         run: npm test
         working-directory: scraper
@@ -53,6 +59,15 @@ jobs:
         id: quality
         run: npm run coverage -- --baseline=${{ runner.temp }}/pricing-baseline/coverage.json
         working-directory: scraper
+      - name: Export package offers and source evidence
+        if: always()
+        id: snapshot
+        run: node scraper/exportMarketSnapshot.js
+      - name: Publish package offers without rebuilding the app
+        if: always() && steps.snapshot.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scraper/publishMarketSnapshot.js "$SCRAPER_OUTPUT_DIR/public/market.json"
       - name: Prepare healthy coverage baseline
         if: success()
         run: |

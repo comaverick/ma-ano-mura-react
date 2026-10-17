@@ -50,6 +50,18 @@ The existing database tables are `ingredients`, `prices`, `recipes`, and `recipe
 
 ## Daily GitHub collection
 
+### Price reliability and whole packs
+
+- When Bantay Presyo is unavailable, the scraper discovers official DA **NCR Daily Price Index PDFs** through DA's public WordPress API. It checks the report title, region, internal date and published link date before extracting values with `pdftotext`. It tries the three most recent published reports within two Manila calendar days. Earlier reports keep their actual dates, and older existing rows are preserved even when they belong to the other source.
+- SM variable-weight labels use the **minimum stated weight** for a conservative upper unit-price estimate. Both bounds, product URL and package price remain in the audit and public evidence. The UI labels these conversions; no midpoint is treated as an exact quote.
+- SM quotes use the **SM Markets Online — NCR** location, separate from DA's regional market location. This respects the existing `(ingredient_id, location_id, date)` uniqueness constraint and permits both sources on the same date without a database migration. The scraper creates the location idempotently when permitted.
+- Personal ingredient measurements can be saved in recipe details. They are amounts for the original serving count, scale with servings, and apply to planner and shopping costs. They are tied to the original ingredient text so a changed recipe cannot silently inherit an unrelated measurement. Unspecified frying oil stays missing until the user supplies an amount or marks it available in the pantry.
+- The shopping list shows an additional **SM whole-pack estimate**, rounds combined quantities up to complete packages, and considers actual pack prices rather than only the lowest unit price. Missing packages remain excluded and explicitly prevent a confirmed checkout total. Variable-weight packs use their guaranteed minimum weight; final weighed checkout prices can differ.
+- The daily workflow publishes public package offers, normalized-price evidence and source collection status to `market.json` on the **price-data** branch. The browser reads this public snapshot independently of the main app deployment. Offers are included only when their associated normalized price was verified as saved for that observation date. Snapshot failure does not block ordinary ingredient estimates. The daily workflow needs `contents: write` for this data-only branch; no server key or new database table is needed.
+- Reviewed price anomalies are limited to exact ingredient/source/date/value transitions with a source evidence URL. They remain visible in reports as reviewed; any different observation is checked normally. See [the October 17 review](docs/pricing-review.md).
+
+For a human usability session, use [the grocery-planning test guide](docs/usability-test.md). Automated browser checks do not count as participant research.
+
 `.github/workflows/scraper.yml` runs automatically at **00:00 Asia/Manila** (`0 16 * * *` UTC), and also supports **Run workflow** in GitHub Actions. Scheduled workflows run from the repository's default branch, so the updated workflow must be on that branch to take effect. GitHub may delay scheduled execution.
 
 Use the existing repository secrets:

@@ -66,6 +66,26 @@ export function KitchenProvider({ children }) {
   );
   const togglePantry = useCallback((key) => toggle("pantry", key), [toggle]);
   const toggleChecked = useCallback((key) => toggle("checked", key), [toggle]);
+  const setMeasurement = useCallback((recipe, row, quantity, unit) => {
+    setData((current) => {
+      const key = recipeKey(recipe);
+      const rows = { ...current.measurements[key] };
+      if (quantity === null) delete rows[row.id];
+      else rows[row.id] = { rawName: row.rawName, quantity, unit };
+      return {
+        ...current,
+        measurements: planning.cleanKitchen({
+          ...current,
+          measurements: { ...current.measurements, [key]: rows },
+        }).measurements,
+      };
+    });
+    setNotice(
+      quantity === null
+        ? "Original recipe quantity restored."
+        : `Your measurement for ${row.definition?.name || row.parsed.name} is saved for this recipe.`,
+    );
+  }, []);
   const addMeal = useCallback((recipe, date, slot, servings) => {
     setData((current) =>
       cleanKitchen({
@@ -125,6 +145,7 @@ export function KitchenProvider({ children }) {
       addMeal,
       removeMeal,
       setBudget,
+      setMeasurement,
     }),
     [
       data,
@@ -136,6 +157,7 @@ export function KitchenProvider({ children }) {
       addMeal,
       removeMeal,
       setBudget,
+      setMeasurement,
     ],
   );
   return (

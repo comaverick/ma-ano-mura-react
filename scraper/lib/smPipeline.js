@@ -1,6 +1,10 @@
 const { matchProduct } = require("./productMatching");
 const { normalizeProductPrice } = require("./priceNormalization");
-const { targetIngredient, LOCATION_ID, manilaDate } = require("./persistence");
+const {
+  targetIngredient,
+  SM_LOCATION_ID,
+  manilaDate,
+} = require("./persistence");
 function prepareSMPrices(
   products,
   ingredients,
@@ -9,6 +13,7 @@ function prepareSMPrices(
   const best = new Map();
   const unmatched = [];
   const rejected = [];
+  const offers = [];
   let matched = 0;
   for (const product of products) {
     const definition = matchProduct(product);
@@ -47,13 +52,34 @@ function prepareSMPrices(
       continue;
     }
     const previous = best.get(ingredient.id);
+    if (!/\b(?:per\s*(?:kg|kilo)|average\s+weight)\b/i.test(product.name))
+      offers.push({
+        ingredientKey: definition.key,
+        ingredientId: ingredient.id,
+        product: product.name,
+        sku: String(product.sku || product.url),
+        url: product.url,
+        packPrice: Number(product.price),
+        baseAmount: normalized.baseAmount,
+        unit: definition.unit,
+        date,
+        estimated: normalized.estimated,
+        variable: !!normalized.variable,
+        ...(normalized.variable
+          ? {
+              unitPriceLow: normalized.unitPriceLow,
+              unitPriceHigh: normalized.unitPriceHigh,
+            }
+          : {}),
+        package: normalized.package,
+      });
     if (!previous || normalized.unitPrice < previous.normalized.unitPrice)
       best.set(ingredient.id, { ingredient, definition, product, normalized });
   }
   const selected = [...best.values()];
   const rows = selected.map(({ ingredient, normalized }) => ({
     ingredient_id: ingredient.id,
-    location_id: LOCATION_ID,
+    location_id: SM_LOCATION_ID,
     avg_price: Number(normalized.unitPrice.toFixed(2)),
     date,
     source: "SM Supermarkets",
@@ -61,6 +87,7 @@ function prepareSMPrices(
   return {
     rows,
     selected,
+    offers,
     report: {
       source: "SM Supermarkets",
       date,
@@ -74,6 +101,8 @@ function prepareSMPrices(
         product: product.name,
         url: product.url,
         observedAt: product.observed_at,
+        sku: product.sku,
+        packPrice: Number(product.price),
         ...normalized,
       })),
     },

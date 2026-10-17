@@ -3,6 +3,8 @@ const money = new Intl.NumberFormat("en-PH", {
   currency: "PHP",
   maximumFractionDigits: 2,
 });
+export const formatSource = (source) =>
+  source === "DA Pricewatch" ? "DA market prices" : source;
 export const formatMoney = (value) => money.format(Number(value) || 0);
 export const formatDate = (value) =>
   value

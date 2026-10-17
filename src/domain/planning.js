@@ -1,5 +1,6 @@
 import { priceRecipe, WEIGHTS, VOLUMES } from "./costing.js";
 import { byKey, normalizeName } from "./ingredientCatalog.js";
+import { cleanMeasurements, withMeasurements } from "./measurements.js";
 
 const STORAGE_KEY = "ma-ano-mura:kitchen:v1";
 const MEAL_SLOTS = ["Breakfast", "Lunch", "Dinner"];
@@ -75,6 +76,7 @@ function cleanKitchen(value) {
     plans: [...plans.values()].slice(-1000),
     checked: strings(input.checked),
     budgets,
+    measurements: cleanMeasurements(input.measurements),
   };
 }
 function localDate(date = new Date()) {
@@ -156,13 +158,16 @@ function buildShoppingList(
   plans,
   recipes,
   index,
-  { pantry = [], source = "best", now = Date.now() } = {},
+  { pantry = [], source = "best", now = Date.now(), measurements = {} } = {},
 ) {
   const lookup = new Map(recipes.map((recipe) => [recipeKey(recipe), recipe]));
   const items = new Map();
   let unresolvedMeals = 0;
   for (const plan of plans) {
-    const recipe = recipeForPlan(plan, lookup);
+    const originalRecipe = recipeForPlan(plan, lookup);
+    const recipe = originalRecipe
+      ? withMeasurements(originalRecipe, measurements)
+      : null;
     if (!recipe || !positive(recipe.servings) || !recipe.ingredients?.length) {
       unresolvedMeals++;
       continue;

@@ -5,6 +5,21 @@ const {
 } = require("../../src/domain/ingredientCatalog.js");
 const { getClient, fetchAll, withRetry } = require("./client");
 const LOCATION_ID = "e0882552-d250-4545-8305-0fcfdff3a566";
+const SM_LOCATION_ID = "c7cbaf77-ef1e-4b13-982e-28a276368c43";
+async function ensureSMLocation(client, { dryRun = false } = {}) {
+  const { data, error } = await client
+    .from("locations")
+    .select("id,name")
+    .eq("id", SM_LOCATION_ID);
+  if (error) throw new Error(`Cannot check SM NCR location: ${error.message}`);
+  if (!data.length && !dryRun) {
+    const { error: insertError } = await client
+      .from("locations")
+      .insert({ id: SM_LOCATION_ID, name: "SM Markets Online — NCR" });
+    if (insertError)
+      throw new Error(`Cannot create SM NCR location: ${insertError.message}`);
+  }
+}
 function manilaDate(now = new Date()) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Manila",
@@ -71,6 +86,7 @@ async function writePrices(client, rows, { dryRun = false } = {}) {
   if (new Set(rows.map((row) => row.ingredient_id)).size !== rows.length)
     throw new Error("Duplicate ingredient in daily price batch");
   const source = rows[0].source;
+  const location = source === "SM Supermarkets" ? SM_LOCATION_ID : LOCATION_ID;
   const date = rows[0].date;
   if (
     !["DA Pricewatch", "SM Supermarkets"].includes(source) ||
@@ -78,7 +94,7 @@ async function writePrices(client, rows, { dryRun = false } = {}) {
     rows.some(
       (row) =>
         !row.ingredient_id ||
-        row.location_id !== LOCATION_ID ||
+        row.location_id !== location ||
         row.source !== source ||
         row.date !== date ||
         !Number.isFinite(row.avg_price) ||
@@ -97,7 +113,7 @@ async function writePrices(client, rows, { dryRun = false } = {}) {
     .select("id,ingredient_id,avg_price,source,date")
     .eq("date", date)
     .eq("source", source)
-    .eq("location_id", LOCATION_ID);
+    .eq("location_id", location);
   if (error) throw new Error(`Cannot check daily prices: ${error.message}`);
   const byId = new Map();
   for (const row of existing) {
@@ -137,7 +153,7 @@ async function writePrices(client, rows, { dryRun = false } = {}) {
         .select("ingredient_id")
         .eq("date", date)
         .eq("source", source)
-        .eq("location_id", LOCATION_ID)
+        .eq("location_id", location)
         .in(
           "ingredient_id",
           chunk.map((row) => row.ingredient_id),
@@ -156,7 +172,7 @@ async function writePrices(client, rows, { dryRun = false } = {}) {
       .select("ingredient_id,avg_price")
       .eq("date", date)
       .eq("source", source)
-      .eq("location_id", LOCATION_ID)
+      .eq("location_id", location)
       .in(
         "ingredient_id",
         chunk.map((row) => row.ingredient_id),
@@ -185,6 +201,8 @@ async function writePrices(client, rows, { dryRun = false } = {}) {
 }
 module.exports = {
   LOCATION_ID,
+  SM_LOCATION_ID,
+  ensureSMLocation,
   manilaDate,
   ensureCatalog,
   targetIngredient,

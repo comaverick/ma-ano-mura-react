@@ -5,9 +5,10 @@ import {
   catalogForMarket,
 } from "./ingredientCatalog.js";
 import { parseIngredientText } from "./recipeParser.js";
+import { measurementFor } from "./measurements.js";
 const PRICE_SOURCES = [
   { value: "best", label: "Lowest available" },
-  { value: "DA Pricewatch", label: "DA Pricewatch" },
+  { value: "DA Pricewatch", label: "DA market prices" },
   { value: "SM Supermarkets", label: "SM Supermarket" },
 ];
 const WEIGHTS = { kg: 1, g: 0.001, lb: 0.45359237, oz: 0.028349523125 };
@@ -210,11 +211,31 @@ function priceRecipe(recipe, index, source = "best", servingsOverride = null) {
         .split("|")
         .filter(Boolean);
   const rows = raw.map((line, i) => {
-    const parsed = parseIngredientText(line);
+    const original = parseIngredientText(line);
+    const measured = measurementFor(recipe, i, line);
+    const parsed = measured
+      ? {
+          ...original,
+          quantity: Number(measured.quantity),
+          unit: measured.unit,
+          estimated: false,
+        }
+      : original;
     const definition = resolveIngredient(parsed.name);
     const entry = definition ? index.get(definition.key) : null;
     const price = getLatestPrice(entry, source);
     let conversion = convertQuantity(parsed.quantity, parsed.unit, definition);
+    if (price?.estimated && conversion.amount !== null)
+      conversion = {
+        ...conversion,
+        estimated: true,
+        reason: [
+          conversion.reason,
+          price.estimateReason || "Uses an estimated source unit conversion",
+        ]
+          .filter(Boolean)
+          .join("; "),
+      };
     if (parsed.estimated && conversion.amount !== null)
       conversion = {
         ...conversion,
@@ -257,6 +278,7 @@ function priceRecipe(recipe, index, source = "best", servingsOverride = null) {
     return {
       id: `ingredient-${i}`,
       rawName: line,
+      userMeasured: !!measured,
       parsed,
       definition,
       price,
