@@ -5,6 +5,11 @@ on:
     # 00:00 Asia/Manila, every day (GitHub cron uses UTC).
     - cron: "0 16 * * *"
   workflow_dispatch:
+    inputs:
+      audit_only:
+        description: Recheck saved prices after review without recollecting suppliers
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -52,6 +57,7 @@ jobs:
           key: pricing-coverage-v1-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: pricing-coverage-v1-
       - name: Collect and update both sources independently
+        if: github.event_name != 'workflow_dispatch' || !inputs.audit_only
         run: npm run daily
         working-directory: scraper
       - name: Audit recipe pricing coverage
@@ -60,7 +66,7 @@ jobs:
         run: npm run coverage -- --baseline=${{ runner.temp }}/pricing-baseline/coverage.json
         working-directory: scraper
       - name: Export package offers and source evidence
-        if: always()
+        if: always() && !inputs.audit_only
         id: snapshot
         run: node scraper/exportMarketSnapshot.js
       - name: Publish package offers without rebuilding the app

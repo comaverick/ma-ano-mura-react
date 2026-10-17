@@ -326,6 +326,11 @@ function matchProduct(product) {
       continue;
     if (rules[definition.key]?.exclude?.test(text)) continue;
     if (
+      definition.key === "chicharon" &&
+      !/\b(pork|rinds?|baboy)\b/.test(text)
+    )
+      continue;
+    if (
       definition.category === "Spices" &&
       /\b(noodle|noodles|ramen|ramyun|soup|pasta|pstasce|marinade|dressing|salad|shots|sauce|flavor|flavour|tea|drink|beverage|juice|capsules?|supplement|coffee)\b/.test(
         text,

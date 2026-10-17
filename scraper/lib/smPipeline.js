@@ -57,6 +57,8 @@ function prepareSMPrices(
         ingredientKey: definition.key,
         ingredientId: ingredient.id,
         product: product.name,
+        categories: product.categories || [],
+        sourceCategory: product.source_category,
         sku: String(product.sku || product.url),
         url: product.url,
         packPrice: Number(product.price),

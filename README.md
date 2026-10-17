@@ -64,6 +64,8 @@ For a human usability session, use [the grocery-planning test guide](docs/usabil
 
 `.github/workflows/scraper.yml` runs automatically at **00:00 Asia/Manila** (`0 16 * * *` UTC), and also supports **Run workflow** in GitHub Actions. Scheduled workflows run from the repository's default branch, so the updated workflow must be on that branch to take effect. GitHub may delay scheduled execution.
 
+After reviewing and correcting saved observations, select **audit_only** in Run workflow to recheck their quality and save a healthy coverage baseline without repeating supplier collection or replacing its source evidence.
+
 Use the existing repository secrets:
 
 - `REACT_APP_SUPABASE_URL`

@@ -64,6 +64,8 @@ test("DA daily PDF matching avoids fish cuts, medium eggs and misleading bottle-
     "Vegetable Oil",
     "Chicken Egg",
     "Salmon",
+    "Squid",
+    "Squid (Pusit Bisaya)",
   ].map((name) => ({
     id: name,
     name,
@@ -81,14 +83,24 @@ test("DA daily PDF matching avoids fish cuts, medium eggs and misleading bottle-
       row("Cooking Oil (Palm)", 101.4, "1 Liter/bottle"),
       row("Chicken Egg (White, Medium)", 8.25),
       row("Salmon Head, Imported", 236.03),
+      row("Squid, Imported", 239.33),
+      row("Squid (Pusit Bisaya), Local", 498.99),
     ],
     ingredients,
     "2026-10-15",
   );
-  assert.equal(result.rows.length, 2);
+  assert.equal(result.rows.length, 4);
   assert.equal(
     result.rows.find((p) => p.ingredient_id === "Vegetable Oil").avg_price,
     101.4,
+  );
+  assert.equal(
+    result.rows.find((p) => p.ingredient_id === "Squid").avg_price,
+    239.33,
+  );
+  assert.equal(
+    result.rows.find((p) => p.ingredient_id === "Squid (Pusit Bisaya)").avg_price,
+    498.99,
   );
 });
 test("variable packages produce conservative bounded unit estimates and reject inverted ranges", () => {
@@ -145,6 +157,22 @@ test("source matching separates chorizo styles, onions, honeydew fruit and herba
   assert.equal(
     matchProduct(product("Marty's Vegetable Chicharon Plain | 26g", "Pantry")),
     null,
+  );
+  assert.equal(
+    matchProduct(product("Mang Juan Chicharon Klasik | 90g", "Pantry")),
+    null,
+  );
+  assert.equal(
+    matchProduct(product("Carls Pork Chicharon Plate Big | 120g", "Pantry")).key,
+    "chicharon",
+  );
+  assert.equal(
+    matchProduct(product("Tigabunga California Squid | 425g", "Frozen Goods")).key,
+    "squid",
+  );
+  assert.equal(
+    matchProduct(product("Fresh Pusit Bisaya Frozen | 500g", "Frozen Goods")).key,
+    "squid pusit bisaya",
   );
 });
 test("reviewed anomalies are tied to exact source, date, prior quote and new quote", () => {

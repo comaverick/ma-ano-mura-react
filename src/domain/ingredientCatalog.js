@@ -408,7 +408,8 @@ const definitions = [
     "bangus medium|bangus large|milkfish|bangus milkfish",
   ],
   ["Tilapia", "Fish", "kg", "tilapia fish"],
-  ["Squid (Pusit Bisaya)", "Fish", "kg", "squid|pusit|calamari"],
+  ["Squid (Pusit Bisaya)", "Fish", "kg", "pusit bisaya"],
+  ["Squid", "Fish", "kg", "squid|pusit|calamari"],
   [
     "Galunggong",
     "Fish",
