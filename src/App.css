@@ -249,3 +249,15 @@
     font-size: 30px;
   }
 }
+.kitchen-notices p:not(:empty) {
+  font-size: 12px;
+  line-height: 1.7;
+  padding: 12px 16px;
+  background: #edf2e1;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+.kitchen-notices [role="alert"]:not(:empty) {
+  background: #fcf0db;
+  color: #815c22;
+}

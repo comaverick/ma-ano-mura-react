@@ -192,7 +192,7 @@ function parseIngredientText(text) {
     toTaste: /\b(to taste|as needed)\b/i.test(original),
     optional: /\boptional\b/i.test(original),
     isWater:
-      /^(?:(?:of|hot|cold|warm|boiling) )?(?:water|water tubig|ice|rice water|rice wash)(?:\s|$)/.test(
+      /^(?:(?:of|hot|cold|warm|boiling) )?(?:water|water tubig|tubig water|ice|rice water|rice wash)(?:\s|$)/.test(
         normalizeName(cleanIngredientName(rest)),
       ),
   };

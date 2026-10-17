@@ -37,13 +37,33 @@ jobs:
       - name: Check matching, quantities, and source parsers
         run: npm test
         working-directory: scraper
+      - name: Restore last healthy coverage baseline
+        continue-on-error: true
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/pricing-baseline
+          key: pricing-coverage-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: pricing-coverage-v1-
       - name: Collect and update both sources independently
         run: npm run daily
         working-directory: scraper
       - name: Audit recipe pricing coverage
         if: always()
-        run: npm run coverage
+        id: quality
+        run: npm run coverage -- --baseline=${{ runner.temp }}/pricing-baseline/coverage.json
         working-directory: scraper
+      - name: Prepare healthy coverage baseline
+        if: success()
+        run: |
+          mkdir -p "${{ runner.temp }}/pricing-baseline"
+          cp "$SCRAPER_OUTPUT_DIR/reports/coverage.json" "${{ runner.temp }}/pricing-baseline/coverage.json"
+      - name: Save healthy coverage baseline
+        continue-on-error: true
+        if: success()
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/pricing-baseline
+          key: pricing-coverage-v1-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Save source quotes and coverage reports
         if: always()
         uses: actions/upload-artifact@v4

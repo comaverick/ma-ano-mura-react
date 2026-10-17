@@ -20,6 +20,7 @@ import {
   isStale,
 } from "../utils/format";
 import "./Recipes.css";
+import RecipeActions from "../components/RecipeActions";
 const { priceRecipe, PRICE_SOURCES } = domainCosting;
 const statusLabels = {
   unmatched: "Ingredient not matched",
@@ -228,6 +229,10 @@ export default function Recipes() {
                   </span>
                 </div>
               </header>
+              <RecipeActions
+                recipe={recipe}
+                servings={servings || recipe.servings}
+              />
               <div className="recipe-settings">
                 <div>
                   <label>Price source</label>

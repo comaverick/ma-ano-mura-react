@@ -23,3 +23,16 @@ export const formatQuantity = (quantity, unit) =>
   quantity == null
     ? "As listed"
     : `${new Intl.NumberFormat("en-PH", { maximumFractionDigits: 2 }).format(quantity)} ${unit || ""}`;
+export const formatShoppingQuantity = (quantity, unit) =>
+  formatQuantity(
+    unit === "kg" && quantity < 1
+      ? quantity * 1000
+      : unit === "l" && quantity < 1
+        ? quantity * 1000
+        : quantity,
+    unit === "kg" && quantity < 1
+      ? "g"
+      : unit === "l" && quantity < 1
+        ? "ml"
+        : unit,
+  );

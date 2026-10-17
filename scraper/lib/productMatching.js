@@ -4,6 +4,19 @@ const {
   hasPhrase,
 } = require("../../src/domain/ingredientCatalog.js");
 const rules = {
+  "pork chops": {
+    exclude: /marinated|breaded|seasoned|sauce|ready|cooked|tocino/,
+  },
+  "beef chuck": { exclude: /marinated|seasoned|sauce|ready|cooked|corned/ },
+  "beef sirloin": { exclude: /marinated|seasoned|sauce|ready|cooked|tapa/ },
+  "vegetable broth": { exclude: /cube|powder|bouillon|mix/ },
+  "heavy cream": { exclude: /coconut|sauce|sweetened|non dairy|nondairy/ },
+  "corned beef": {
+    exclude: /chicken|pork|meat free|vegan|plant based|pasta|sauce|noodle/,
+  },
+  "salted egg": {
+    exclude: /sauce|flavor|flavour|chip|pasta|spread|mayo|mix|powder|bread/,
+  },
   honey: {
     exclude:
       /oat|quaker|banana|yuzu|sip plus|nectar|beverage|sauce|mustard|marinade|bbq|tea|drink|dressing|roasted/,
@@ -157,7 +170,7 @@ function matchProduct(product) {
     ...(product.categories || []),
   ].map(normalizeName);
   const inFreshAisle = categories.some((value) =>
-    /^(fresh produce|fresh meat seafood|frozen goods|fruits|vegetables|frozen vegetables|frozen seafood|seafood|beef|pork|chicken)$/.test(
+    /^(fresh produce|fresh meat (?:and )?seafood|frozen goods|fruits|vegetables|frozen vegetables|frozen seafood|seafood|beef|pork|chicken)$/.test(
       value,
     ),
   );
@@ -226,6 +239,7 @@ function matchProduct(product) {
           "ham",
           "chinese sausage",
           "chicken egg",
+          "salted egg",
         ].includes(definition.key));
     if (rawProtein && !inFreshAisle) continue;
     if (

@@ -88,6 +88,17 @@
   }
 }
 @media (max-width: 400px) {
+  .navbar-container {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .navigation {
+    gap: 1px;
+  }
+  .nav-link {
+    padding: 9px 7px;
+    font-size: 11px;
+  }
   .nav-location {
     font-size: 0;
     gap: 4px;

@@ -2,6 +2,24 @@
 
 A Filipino meal budget planner using NCR ingredient prices from DA Pricewatch and SM Supermarkets. The React app includes recipe search and cost estimates, ingredient price histories, and category browsing.
 
+## Plan meals and shopping
+
+Open **Planner** from the navigation:
+
+- **Find a meal:** enter a total meal budget and 1–100 servings, choose a price source, and sort by shopping cost or fewest additional ingredients. Only recipes with complete remaining shopping costs and quotes no older than seven days appear as confirmed budget matches. Recipes needing price or quantity review appear separately.
+- **Your pantry:** select ingredients you have enough of for all selected meals. English and Filipino aliases are searchable. Selected pantry ingredients are removed from shopping costs and lists; this is an explicit availability assumption, not an inventory quantity tracker.
+- **Saved recipes:** save favorites from meal suggestions or recipe details.
+- **Weekly plan:** choose any date and breakfast/lunch/dinner slot from the finder or recipe detail page, with scaled servings. One recipe occupies each slot; replacement is explicitly labelled. Navigate between weeks, remove meals, and set a grocery budget per week.
+- **Shopping list:** combines ingredient amounts across that week's meals in compatible units, excludes pantry items, and shows missing costs and older quotes. Check items off, copy the list, or print/save it as a PDF. Changing an ingredient's total amount resets its check-off state.
+
+Favorites, pantry selections, plans, weekly budgets and check-offs are saved in this browser under `ma-ano-mura:kitchen:v1`. They are not synced across devices or sent to Supabase. Browser storage failures show a warning; the planner remains usable for the current visit. Clearing site data clears saved kitchen data. Recipe keys use normalized names so database ID changes do not lose saved meals.
+
+Imported recipes without bundled ingredient details keep a small ingredient snapshot when added to the plan, so their shopping quantities survive a reload. Check-offs belong to the selected week and ingredient amount.
+
+Estimates cover ingredient amounts needed, not purchases rounded up to whole packs. Water and unmeasured seasonings remain excluded; actual grocery totals can be higher. Incomplete estimates never claim to fit a budget. Pantry ingredients marked as available can make the remaining shopping estimate complete even when their own source prices are missing.
+
+The **Price coverage & gaps** page, linked from the footer and planner, ranks missing ingredient matches, source prices and quantity conversions by the number of recipes affected. It displays source observation dates and separates missing prices from recipe measurement issues.
+
 ## Run locally
 
 Use Node **22.12 or newer**. The frontend uses Create React App; the Node scripts share its ingredient vocabulary and quantity parser through `src/domain/`.
@@ -50,12 +68,16 @@ The daily job:
 6. Rejects unrelated prepared foods, pet products, ambiguous package weights, and unsupported conversions. It normalizes each candidate to the catalog unit before selecting a price.
 7. Updates/inserts one quote per ingredient, source, NCR location, and Manila observation date. Reruns update existing same-day rows; they do not delete history. Workflow concurrency prevents overlapping scheduled/manual runs.
 8. Audits coverage and uploads the raw observed SM catalog, source quotes, rejected candidates, and coverage reports as a GitHub Actions artifact for 14 days.
+9. Checks price quality, writes a readable GitHub Actions summary and `quality.json`/`quality.md` reports, and marks the audit step as failed when coverage falls below 70%, drops by more than five percentage points from the previous healthy run, either source's latest usable quote is over two Manila calendar days old, recent price rows are invalid, or recent same-source prices double/halve with at least a ₱20 change in the catalog unit. Price comparisons require a previous observation within 14 days. Quote changes are flagged for review without deleting price history. Thresholds are centralized in `scraper/lib/quality.js`.
+10. Caches a coverage baseline only after the full job succeeds. Failed runs do not replace the last healthy baseline. The first run reports that a baseline is unavailable and still checks absolute coverage, source freshness and price changes. Audit artifacts are uploaded even after collection or quality failures.
 
 **Failure behavior:** responses are validated and retried with timeouts. A failed source leaves its previous quotes in place and makes the workflow fail visibly after the other source has had an opportunity to update. Historical SM JSON files without a current observation timestamp cannot be inserted as today's prices. Failed category collection does not overwrite a previously collected catalog. Individual search failures are recorded in the collection report.
 
 SM quotes represent the lowest matched product per catalog unit, including packaged pantry products. Some product-label conversions use an ingredient-specific density; these approximations are recorded in the source audit. Prices are estimates for planning, not checkout offers or a guarantee of availability at every branch.
 
 ## Commands and checks
+
+`.github/workflows/checks.yml` runs frontend interaction/domain tests, scraper tests and a production build on pushes to `main` and pull requests. The scheduled collection workflow remains separate.
 
 ```sh
 # Frontend interaction and pagination regressions

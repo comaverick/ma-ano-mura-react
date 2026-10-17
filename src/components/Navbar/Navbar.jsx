@@ -16,6 +16,7 @@ export default function Navbar() {
           {[
             ["/", "Home"],
             ["/recipes", "Recipes"],
+            ["/planner", "Planner"],
             ["/prices", "Prices"],
             ["/categories", "Categories"],
           ].map(([path, label]) => (

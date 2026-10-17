@@ -3,10 +3,11 @@ const path = require("path");
 const { getClient, fetchAll } = require("./lib/client");
 const {
   createPriceIndex,
-  priceRecipe,
   getLatestPrice,
 } = require("../src/domain/costing.js");
 const { catalog } = require("../src/domain/ingredientCatalog.js");
+const { summarizeCoverage } = require("../src/domain/coverage.js");
+const { evaluateQuality, writeQualityReport } = require("./lib/quality");
 function audit(ingredients, prices, recipes) {
   const byIngredient = new Map();
   for (const price of prices) {
@@ -20,59 +21,24 @@ function audit(ingredients, prices, recipes) {
       prices: byIngredient.get(item.id) || [],
     })),
   );
-  const stats = {
-    recipes: recipes.length,
-    catalogDefinitions: catalog.length,
-    ingredientsWithQuotes: [...index.values()].filter((row) =>
-      getLatestPrice(row),
-    ).length,
-    requiredIngredientRows: 0,
-    pricedIngredientRows: 0,
-    fullyPricedRecipes: 0,
-    missingByReason: {},
-    unmatched: [],
-    unpriced: [],
+  const summary = summarizeCoverage(recipes, index);
+  const aggregate = (statuses) => {
+    const counts = new Map();
+    for (const gap of summary.priorities.filter((item) =>
+      statuses.includes(item.status),
+    ))
+      counts.set(gap.name, (counts.get(gap.name) || 0) + gap.rows);
+    return [...counts].sort((a, b) => b[1] - a[1]);
   };
-  const unmatched = new Map(),
-    unpriced = new Map();
-  for (const recipe of recipes) {
-    const result = priceRecipe(recipe, index);
-    stats.requiredIngredientRows += result.requiredCount;
-    stats.pricedIngredientRows += result.pricedCount;
-    if (result.coverage === 100) stats.fullyPricedRecipes++;
-    for (const row of result.missing) {
-      stats.missingByReason[row.status] =
-        (stats.missingByReason[row.status] || 0) + 1;
-      const map = row.status === "unmatched" ? unmatched : unpriced;
-      const name = row.definition?.name || row.parsed.name || row.rawName;
-      map.set(name, (map.get(name) || 0) + 1);
-    }
-  }
-  stats.coveragePercent = Number(
-    (
-      (stats.pricedIngredientRows / Math.max(stats.requiredIngredientRows, 1)) *
-      100
-    ).toFixed(2),
-  );
-  stats.unmatched = [...unmatched].sort((a, b) => b[1] - a[1]);
-  stats.unpriced = [...unpriced].sort((a, b) => b[1] - a[1]);
-  stats.sources = Object.fromEntries(
-    ["DA Pricewatch", "SM Supermarkets"].map((source) => [
-      source,
-      {
-        ingredients: [...index.values()].filter((row) =>
-          getLatestPrice(row, source),
-        ).length,
-        latest:
-          prices
-            .filter((p) => (p.source || "DA Pricewatch") === source)
-            .map((p) => p.date)
-            .sort()
-            .at(-1) || null,
-      },
-    ]),
-  );
-  return stats;
+  return {
+    ...summary,
+    catalogDefinitions: catalog.length,
+    ingredientsWithQuotes: [...index.values()].filter((entry) =>
+      getLatestPrice(entry),
+    ).length,
+    unmatched: aggregate(["unmatched"]),
+    unpriced: aggregate(["quantity", "no-price"]),
+  };
 }
 async function main() {
   const prefix = process.argv
@@ -109,8 +75,18 @@ async function main() {
     ),
   );
   const { unmatched, unpriced, ...summary } = report;
-  console.log(JSON.stringify(summary, null, 2));
+  const { priorities, ...brief } = summary;
+  console.log(JSON.stringify(brief, null, 2));
   console.log("Most common unrecognized recipe text:", unmatched.slice(0, 10));
+  const baselinePath = process.argv
+    .find((arg) => arg.startsWith("--baseline="))
+    ?.slice("--baseline=".length);
+  let baseline = null;
+  if (baselinePath && fs.existsSync(baselinePath))
+    baseline = JSON.parse(fs.readFileSync(baselinePath, "utf8"));
+  const quality = evaluateQuality({ report, prices, ingredients, baseline });
+  writeQualityReport(quality, report, dir);
+  if (quality.errors.length) process.exitCode = 1;
   if (!prices.length || report.pricedIngredientRows === 0)
     throw new Error("No usable price data in the coverage audit");
 }

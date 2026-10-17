@@ -72,7 +72,8 @@ test("Filipino and market aliases share physical ingredients without crossing fo
   assert.equal(def("pork hock").key, "pork hock");
   assert.equal(def("pork intestines"), null);
   assert.equal(def("quail eggs"), null);
-  assert.equal(def("corned beef"), null);
+  assert.equal(def("corned beef").key, "corned beef");
+  assert.notEqual(def("corned beef").key, def("beef").key);
 });
 test("SM matches exact food identities and reversed product words", () => {
   for (const [name, key] of [
@@ -406,5 +407,18 @@ test("generic meat can use an explicit market-cut reference while specific cuts 
   assert.equal(cost.rows[0].price.reference, true);
   assert.match(cost.rows[0].conversion.reason, /Kasim/);
   assert.equal(cost.rows[1].cost, null);
-  assert.equal(resolveIngredient("beef sirloin"), null);
+  assert.equal(resolveIngredient("beef sirloin").key, "beef sirloin");
+  const beefIndex = createPriceIndex([
+    {
+      id: "brisket",
+      name: "Beef Brisket",
+      unit: "KG",
+      prices: [{ avg_price: 400, date: "2026-10-17", source: "DA Pricewatch" }],
+    },
+  ]);
+  assert.equal(
+    priceRecipe({ ingredients: ["500 g beef sirloin"] }, beefIndex).rows[0]
+      .cost,
+    null,
+  );
 });

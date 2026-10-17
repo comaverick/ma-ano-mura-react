@@ -525,3 +525,38 @@
     font-size: 20px;
   }
 }
+.home-planner-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+  padding: 30px;
+  background: #edf1df;
+  border: 1px solid #dae3ca;
+  border-radius: 16px;
+  margin-bottom: 45px;
+}
+.home-planner-banner h2 {
+  font: 400 32px/1.2 var(--serif);
+  letter-spacing: -0.6px;
+  margin: 12px 0;
+}
+.home-planner-banner p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--muted);
+  max-width: 520px;
+}
+.home-planner-banner .button {
+  flex-shrink: 0;
+}
+@media (max-width: 580px) {
+  .home-planner-banner {
+    flex-direction: column;
+    align-items: start;
+    padding: 24px;
+  }
+  .home-planner-banner h2 {
+    font-size: 28px;
+  }
+}

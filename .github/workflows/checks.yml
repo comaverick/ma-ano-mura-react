@@ -1,0 +1,43 @@
+name: App and pricing checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: "true"
+      PUPPETEER_SKIP_DOWNLOAD: "true"
+      REACT_APP_SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
+      REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            scraper/package-lock.json
+      - name: Install frontend dependencies
+        run: npm ci --ignore-scripts
+      - name: Install scraper dependencies
+        run: npm ci --prefix scraper --ignore-scripts
+      - name: Check planner, recipe flows, and pagination
+        run: npm test -- --watchAll=false --runInBand
+      - name: Check source matching and price quality alerts
+        run: npm test --prefix scraper
+      - name: Build production app
+        run: npm run build

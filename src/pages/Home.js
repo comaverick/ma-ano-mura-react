@@ -206,6 +206,19 @@ export default function Home() {
           />
         )}
         <section className="home-recipes">
+          <div className="home-planner-banner">
+            <div>
+              <span className="eyebrow">MEET YOUR EVERYDAY MEAL PLANNER</span>
+              <h2>What can your budget cook?</h2>
+              <p>
+                Find meals within your budget, use your pantry, and make one
+                shopping list for the week.
+              </p>
+            </div>
+            <Link className="button button-dark" to="/planner">
+              Plan my meals <ArrowRightOutlined />
+            </Link>
+          </div>
           <div className="section-heading">
             <div>
               <span className="eyebrow">FROM OUR RECIPE COLLECTION</span>

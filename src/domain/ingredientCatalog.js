@@ -3,6 +3,37 @@
  * (e.g. coconut cream/milk, long beans/green beans) deliberately stay separate.
  */
 const definitions = [
+  ["Pork Chops", "Meat and Poultry", "kg", "pork chop|pork chops"],
+  ["Beef Chuck", "Meat and Poultry", "kg", "beef chuck|chuck beef"],
+  ["Beef Sirloin", "Meat and Poultry", "kg", "beef sirloin|sirloin beef"],
+  ["Pork Blood", "Meat and Poultry", "l", "pig blood|pork blood|dugo ng baboy"],
+  [
+    "Salted Egg",
+    "Meat and Poultry",
+    "piece",
+    "salted eggs|itlog na maalat|itlog na pula",
+  ],
+  [
+    "Vegetable Broth",
+    "Pantry",
+    "l",
+    "vegetable stock|vegetable broth",
+    null,
+    null,
+    1.0,
+  ],
+  ["Bottle Gourd", "Vegetables", "kg", "upo|bottle gourd", 116],
+  ["Kamias", "Fruits", "kg", "bilimbi|kamias"],
+  [
+    "Heavy Cream",
+    "Pantry",
+    "l",
+    "heavy whipping cream|heavy cream|double cream",
+    null,
+    null,
+    1.0,
+  ],
+  ["Corned Beef", "Pantry", "kg", "corned beef", 240],
   ["Honey", "Pantry", "kg", "honey", 340, null, 1.42],
   ["Hoisin Sauce", "Pantry", "l", "hoisin", null, null, 1.2],
   [
@@ -314,7 +345,7 @@ const definitions = [
     "kg",
     "pork spare ribs|pork spareribs|baby back ribs",
   ],
-  ["Pork Liver", "Meat and Poultry", "kg", "liver pork"],
+  ["Pork Liver", "Meat and Poultry", "kg", "liver pork|pig liver"],
   [
     "Ground Pork",
     "Meat and Poultry",
@@ -653,10 +684,16 @@ for (const item of catalog)
 const phraseAliases = [...exactAliases].sort(
   (a, b) => b[0].length - a[0].length,
 );
+const phrasePatterns = new Map();
 function hasPhrase(text, phrase) {
-  return new RegExp(
-    `(?:^| )${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}${phrase.endsWith("s") ? "" : "s?"}(?= |$)`,
-  ).test(text);
+  if (!phrasePatterns.has(phrase))
+    phrasePatterns.set(
+      phrase,
+      new RegExp(
+        `(?:^| )${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}${phrase.endsWith("s") ? "" : "s?"}(?= |$)`,
+      ),
+    );
+  return phrasePatterns.get(phrase).test(text);
 }
 function resolveIngredient(value) {
   const name = normalizeName(value)
