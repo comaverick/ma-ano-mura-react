@@ -1,5 +1,5 @@
 import { NavLink, Link } from "react-router-dom";
-import { EnvironmentOutlined, ArrowRightOutlined } from "@ant-design/icons";
+import { HeartOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import logo from "../../assets/logo.svg";
 import "./Navbar.css";
 export default function Navbar() {
@@ -32,9 +32,13 @@ export default function Navbar() {
             </NavLink>
           ))}
         </div>
-        <Link to="/prices" className="nav-location">
-          <EnvironmentOutlined /> NCR, Philippines <ArrowRightOutlined />
-        </Link>
+        <NavLink
+          to="/my-kitchen"
+          className="nav-location nav-kitchen"
+          aria-label="My Kitchen"
+        >
+          <HeartOutlined /> <span>My Kitchen</span> <ArrowRightOutlined />
+        </NavLink>
       </nav>
     </header>
   );

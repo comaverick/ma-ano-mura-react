@@ -4,6 +4,12 @@ A Filipino meal budget planner using NCR ingredient prices from DA Pricewatch an
 
 ## Plan meals and shopping
 
+Open **My Kitchen** in the navigation to set household size, a usual meal budget, dietary preference (including vegetarian or pescatarian), preferred proteins, ingredients to avoid, cooking time, ingredient count and chili preference. Save the profile to update household portions and budget defaults for new meals. Existing plans keep their saved servings; resetting preferences preserves favorites, pantry items, measurements and meal plans.
+
+The homepage recommends meals using listed ingredients, your pantry, saved recipes and preferences, and explains why each recipe was chosen. Dietary rules inspect sauces and stocks as well as proteins; unclear ingredients are excluded from dietary recommendations. Avoided ingredients use the shared ingredient vocabulary and aliases, including optional ingredients. Cooking time must be established when a time limit is set. These filters describe listed recipe ingredients, not certified product contents or a measured spice rating.
+
+Only complete shopping estimates with recent prices confirm a budget fit. Incomplete estimates stay labelled as partial; recipes already exceeding the saved meal budget are excluded from homepage recommendations. Recipe and planner filters can be switched off to browse the complete collection. Explicit recipe links remain accessible, with a note if they conflict with saved preferences.
+
 Open **Planner** from the navigation:
 
 - **Find a meal:** enter a total meal budget and 1–100 servings, choose a price source, and sort by shopping cost or fewest additional ingredients. Only recipes with complete remaining shopping costs and quotes no older than seven days appear as confirmed budget matches. Recipes needing price or quantity review appear separately.
@@ -12,7 +18,7 @@ Open **Planner** from the navigation:
 - **Weekly plan:** choose any date and breakfast/lunch/dinner slot from the finder or recipe detail page, with scaled servings. One recipe occupies each slot; replacement is explicitly labelled. Navigate between weeks, remove meals, and set a grocery budget per week.
 - **Shopping list:** combines ingredient amounts across that week's meals in compatible units, excludes pantry items, and shows missing costs and older quotes. Check items off, copy the list, or print/save it as a PDF. Changing an ingredient's total amount resets its check-off state.
 
-Favorites, pantry selections, plans, weekly budgets and check-offs are saved in this browser under `ma-ano-mura:kitchen:v1`. They are not synced across devices or sent to Supabase. Browser storage failures show a warning; the planner remains usable for the current visit. Clearing site data clears saved kitchen data. Recipe keys use normalized names so database ID changes do not lose saved meals.
+Profile preferences, favorites, pantry selections, plans, weekly budgets and check-offs are saved in this browser under `ma-ano-mura:kitchen:v1`. They are not synced across devices or sent to Supabase. Browser storage failures show a warning; the planner remains usable for the current visit. Clearing site data clears saved kitchen data. Recipe keys use normalized names so database ID changes do not lose saved meals.
 
 Imported recipes without bundled ingredient details keep a small ingredient snapshot when added to the plan, so their shopping quantities survive a reload. Check-offs belong to the selected week and ingredient amount.
 

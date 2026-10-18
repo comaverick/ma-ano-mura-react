@@ -18,6 +18,7 @@ import planning from "../domain/planning.js";
 import catalogDomain from "../domain/ingredientCatalog.js";
 import costing from "../domain/costing.js";
 import measurementsDomain from "../domain/measurements.js";
+import preferences from "../domain/preferences.js";
 import {
   formatMoney,
   formatShoppingQuantity,
@@ -85,8 +86,24 @@ export default function Planner() {
     next.set(key, value);
     setParams(next, { replace: true });
   }
-  const [budget, setBudget] = useState("150");
-  const [servings, setServings] = useState("3");
+  const [budgetOverride, setBudget] = useState(null);
+  const [servingsOverride, setServings] = useState(null);
+  const budget = budgetOverride ?? String(kitchen.profile.mealBudget || 150);
+  const servings =
+    servingsOverride ?? String(kitchen.profile.householdSize || 3);
+  const [preferenceOverride, setPreferenceOverride] = useState(null);
+  const usePreferences =
+    preferenceOverride ?? preferences.hasFoodRules(kitchen.profile);
+  const preferenceMatches = useMemo(
+    () =>
+      new Map(
+        recipes.map((recipe) => [
+          recipeKey(recipe),
+          preferences.preferenceMatch(recipe, kitchen.profile),
+        ]),
+      ),
+    [recipes, kitchen.profile],
+  );
   const [query, setQuery] = useState("");
   const search = useDeferredValue(query);
   const [source, setSource] = useState("best");
@@ -131,6 +148,7 @@ export default function Planner() {
   const filtered = assessed.filter(
     ({ recipe }) =>
       recipe.name.toLowerCase().includes(search.toLowerCase().trim()) &&
+      (!usePreferences || preferenceMatches.get(recipeKey(recipe)).eligible) &&
       (tab !== "saved" || kitchen.favorites.includes(recipeKey(recipe))),
   );
   const matches = filtered
@@ -382,8 +400,21 @@ export default function Planner() {
                 ? "Your kitchen settings"
                 : "What’s the budget?"}
             </h2>
+            <Link className="text-link" to="/my-kitchen">
+              My Kitchen preferences →
+            </Link>
             {(tab === "discover" || tab === "saved") && (
               <>
+                {preferences.hasFoodRules(kitchen.profile) && (
+                  <label className="preference-filter">
+                    <input
+                      type="checkbox"
+                      checked={usePreferences}
+                      onChange={(e) => setPreferenceOverride(e.target.checked)}
+                    />
+                    Use My Kitchen preferences
+                  </label>
+                )}
                 <label>
                   Meal budget (₱)
                   <input
@@ -575,12 +606,13 @@ export default function Planner() {
                     <HeartOutlined />
                     <h3>
                       {kitchen.favorites.length
-                        ? "No saved meals match this search."
+                        ? "No saved meals match these filters."
                         : "Make room for your favorites."}
                     </h3>
                     <p>
-                      Tap the heart on a meal or save a recipe from its detail
-                      page.
+                      {kitchen.favorites.length
+                        ? "Try another search or turn off My Kitchen preferences to see all your saved meals."
+                        : "Tap the heart on a meal or save a recipe from its detail page."}
                     </p>
                     <button
                       className="button button-dark"
@@ -608,6 +640,8 @@ export default function Planner() {
                       <p>
                         Try a larger budget, fewer servings, another price
                         source, or add ingredients you already have.
+                        {usePreferences &&
+                          " You can also adjust My Kitchen preferences."}
                       </p>
                     </div>
                   )}

@@ -25,6 +25,7 @@ import RecipeActions from "../components/RecipeActions";
 import IngredientMeasurement from "../components/IngredientMeasurement";
 import { useKitchen } from "../context/KitchenContext";
 import measurementsDomain from "../domain/measurements.js";
+import preferences from "../domain/preferences.js";
 const { priceRecipe, PRICE_SOURCES } = domainCosting;
 const statusLabels = {
   unmatched: "Ingredient not matched",
@@ -35,7 +36,7 @@ const statusLabels = {
   priced: "Included",
 };
 export default function Recipes() {
-  const { measurements } = useKitchen();
+  const { measurements, profile } = useKitchen();
   const {
     recipes,
     recipesLoading,
@@ -53,21 +54,27 @@ export default function Recipes() {
     : "best";
   const deferred = useDeferredValue(query);
   const [servings, setServings] = useState(null);
+  const [preferenceOverride, setPreferenceOverride] = useState(null);
+  const usePreferences =
+    preferenceOverride ?? preferences.hasFoodRules(profile);
   const [detailOverride, setDetailOverride] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
   const filtered = useMemo(
     () =>
-      recipes.filter((recipe) =>
-        recipe.name.toLowerCase().includes(deferred.trim().toLowerCase()),
+      recipes.filter(
+        (recipe) =>
+          recipe.name.toLowerCase().includes(deferred.trim().toLowerCase()) &&
+          (!usePreferences ||
+            preferences.preferenceMatch(recipe, profile).eligible),
       ),
-    [recipes, deferred],
+    [recipes, deferred, usePreferences, profile],
   );
   const selected =
     recipes.find((recipe) => recipe.id === params.get("recipe")) ||
     (query
       ? filtered[0]
-      : recipes.find((recipe) => /^chicken adobo$/i.test(recipe.name))) ||
+      : filtered.find((recipe) => /^chicken adobo$/i.test(recipe.name))) ||
     filtered[0];
   const selectedId = selected?.id;
   useEffect(() => {
@@ -121,9 +128,17 @@ export default function Recipes() {
         : null,
     [selected, detailOverride, measurements],
   );
+  const requestedServings =
+    servings ?? (Number(recipe?.servings) > 0 ? profile.householdSize : null);
+  const preferenceCheck = recipe
+    ? preferences.preferenceMatch(recipe, profile)
+    : null;
   const cost = useMemo(
-    () => (recipe ? priceRecipe(recipe, priceIndex, source, servings) : null),
-    [recipe, priceIndex, source, servings],
+    () =>
+      recipe
+        ? priceRecipe(recipe, priceIndex, source, requestedServings)
+        : null,
+    [recipe, priceIndex, source, requestedServings],
   );
   function update(key, value) {
     const next = new URLSearchParams(params);
@@ -181,6 +196,21 @@ export default function Recipes() {
               placeholder="Find your next favorite…"
             />
           </label>
+          {preferences.hasFoodRules(profile) && (
+            <label className="preference-filter">
+              <input
+                type="checkbox"
+                checked={usePreferences}
+                onChange={(event) =>
+                  setPreferenceOverride(event.target.checked)
+                }
+              />
+              Use My Kitchen preferences
+            </label>
+          )}
+          <Link className="text-link" to="/my-kitchen">
+            My Kitchen preferences →
+          </Link>
           <div className="recipe-list" aria-label="Recipes">
             {recipesLoading ? (
               <Skeleton active paragraph={{ rows: 8 }} />
@@ -206,7 +236,9 @@ export default function Recipes() {
               ))
             ) : (
               <p className="state-message">
-                No recipes match “{query}”.
+                {usePreferences
+                  ? "No recipes match your search and kitchen preferences."
+                  : `No recipes match “${query}”.`}
                 <br />
                 <button className="text-link" onClick={() => update("q", "")}>
                   Clear search
@@ -242,8 +274,15 @@ export default function Recipes() {
               </header>
               <RecipeActions
                 recipe={recipe}
-                servings={servings || recipe.servings}
+                servings={requestedServings || recipe.servings}
               />
+              {preferenceCheck && !preferenceCheck.eligible && (
+                <p className="preference-note">
+                  <strong>Outside your kitchen preferences.</strong>{" "}
+                  {preferenceCheck.conflicts.join(". ")}.{" "}
+                  <Link to="/my-kitchen">Edit preferences</Link>
+                </p>
+              )}
               <div className="recipe-settings">
                 <div>
                   <label>Price source</label>
@@ -271,7 +310,7 @@ export default function Recipes() {
                     min="1"
                     max="100"
                     disabled={!recipe.servings}
-                    value={servings || recipe.servings || ""}
+                    value={requestedServings || recipe.servings || ""}
                     onChange={(event) =>
                       setServings(
                         event.target.value
@@ -285,6 +324,14 @@ export default function Recipes() {
                   />
                 </label>
               </div>
+              {profile.householdSize &&
+                servings === null &&
+                Number(recipe.servings) > 0 && (
+                  <p className="kitchen-hint">
+                    Using your household default of {profile.householdSize}{" "}
+                    servings. Change it above for this meal.
+                  </p>
+                )}
               {error && (
                 <Alert
                   className="data-warning"
@@ -411,7 +458,8 @@ export default function Recipes() {
                           <div className="recipe-ingredient-name">
                             <strong>{row.rawName}</strong>
                             <small>
-                              {servings && servings !== recipe.servings
+                              {cost.servings &&
+                              cost.servings !== Number(recipe.servings)
                                 ? `Scaled: ${formatQuantity(row.quantity, row.parsed.unit)} · `
                                 : ""}
                               {row.conversion.estimated && row.cost !== null

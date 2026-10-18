@@ -1,6 +1,7 @@
 import { priceRecipe, WEIGHTS, VOLUMES } from "./costing.js";
 import { byKey, normalizeName } from "./ingredientCatalog.js";
 import { cleanMeasurements, withMeasurements } from "./measurements.js";
+import { cleanProfile } from "./profile.js";
 
 const STORAGE_KEY = "ma-ano-mura:kitchen:v1";
 const MEAL_SLOTS = ["Breakfast", "Lunch", "Dinner"];
@@ -77,6 +78,7 @@ function cleanKitchen(value) {
     checked: strings(input.checked),
     budgets,
     measurements: cleanMeasurements(input.measurements),
+    profile: cleanProfile(input.profile),
   };
 }
 function localDate(date = new Date()) {

@@ -10,6 +10,9 @@ export default function Footer() {
         <p>Good food. Thoughtful spending.</p>
       </div>
       <div className="footer-links">
+        <Link to="/my-kitchen">
+          Personalize My Kitchen <ArrowRightOutlined />
+        </Link>
         <Link to="/planner">
           Plan meals & shopping <ArrowRightOutlined />
         </Link>

@@ -18,6 +18,7 @@ import { MarketProvider } from "./context/MarketContext";
 import { KitchenProvider, useKitchen } from "./context/KitchenContext";
 import Planner from "./pages/Planner";
 import Coverage from "./pages/Coverage";
+import MyKitchen from "./pages/MyKitchen";
 function KitchenNotice() {
   const { storageError, notice } = useKitchen();
   return (
@@ -63,6 +64,7 @@ function App() {
                 <Route path="/categories" element={<Categories />} />
                 <Route path="/planner" element={<Planner />} />
                 <Route path="/coverage" element={<Coverage />} />
+                <Route path="/my-kitchen" element={<MyKitchen />} />
                 <Route
                   path="*"
                   element={

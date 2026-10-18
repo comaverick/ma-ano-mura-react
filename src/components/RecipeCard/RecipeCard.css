@@ -108,3 +108,17 @@
   border-radius: 50%;
   color: var(--green);
 }
+.recipe-reasons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: -2px 0 16px;
+}
+.recipe-reasons span {
+  border: 1px solid var(--line);
+  color: var(--green);
+  border-radius: 20px;
+  padding: 5px 8px;
+  font-size: 9px;
+  line-height: 1.5;
+}

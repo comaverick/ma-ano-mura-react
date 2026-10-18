@@ -22,15 +22,48 @@ import adobo from "../assets/adobo.png";
 import "./Home.css";
 import { useKitchen } from "../context/KitchenContext";
 import measurementsDomain from "../domain/measurements.js";
+import preferences from "../domain/preferences.js";
 const { getLatestPrice, priceRecipe } = domainCosting;
 export default function Home() {
-  const { measurements } = useKitchen();
-  const { recipes, priceIndex, loading, recipesLoading, error, refresh } =
-    useMarket();
+  const { measurements, profile, pantry, favorites } = useKitchen();
+  const {
+    recipes,
+    priceIndex,
+    loading,
+    recipesLoading,
+    error,
+    recipeError,
+    refresh,
+  } = useMarket();
   const [query, setQuery] = useState("");
   const [searchType, setSearchType] = useState("recipes");
   const navigate = useNavigate();
+  const personalized =
+    preferences.hasProfile(profile) ||
+    pantry.length > 0 ||
+    favorites.length > 0;
+  const recommendations = useMemo(
+    () =>
+      personalized
+        ? preferences.recommendRecipes(recipes, priceIndex, {
+            profile,
+            pantry,
+            favorites,
+            measurements,
+          })
+        : [],
+    [
+      personalized,
+      recipes,
+      priceIndex,
+      profile,
+      pantry,
+      favorites,
+      measurements,
+    ],
+  );
   const featured = useMemo(() => {
+    if (personalized) return recommendations.map((item) => item.recipe);
     const selected = [];
     for (const pattern of [
       /^chicken adobo$/i,
@@ -46,7 +79,7 @@ export default function Home() {
         (r) => !selected.includes(r) && /adobo|sinigang|ginataan/i.test(r.name),
       ),
     ].slice(0, 3);
-  }, [recipes]);
+  }, [recipes, personalized, recommendations]);
   const watch = useMemo(
     () =>
       ["tomato", "chicken", "garlic", "rice"]
@@ -68,6 +101,8 @@ export default function Home() {
     ? priceRecipe(
         measurementsDomain.withMeasurements(featured[0], measurements),
         priceIndex,
+        "best",
+        profile.householdSize,
       )
     : null;
   function search(event) {
@@ -205,20 +240,46 @@ export default function Home() {
             </span>
           </div>
         </section>
-        {error && (
+        {(error || recipeError) && (
           <Alert
             className="data-warning"
             type="warning"
             showIcon
-            title={error}
+            title={error || recipeError}
             action={
-              <button className="text-link" onClick={refresh}>
-                Retry
-              </button>
+              error && (
+                <button className="text-link" onClick={refresh}>
+                  Retry
+                </button>
+              )
             }
           />
         )}
         <section className="home-recipes">
+          <div className="home-kitchen-banner">
+            <span className="home-kitchen-icon" aria-hidden="true">
+              🥬
+            </span>
+            <div>
+              <strong>
+                {personalized
+                  ? "A little more your kind of cooking."
+                  : "Make this kitchen feel like yours."}
+              </strong>
+              <p>
+                {profile.householdSize
+                  ? `Meals for ${profile.householdSize}. `
+                  : ""}
+                {personalized
+                  ? "Your tastes, pantry, and saved recipes shape the suggestions below."
+                  : "Set your household size, favorite foods, and cooking preferences."}
+              </p>
+            </div>
+            <Link className="text-link" to="/my-kitchen">
+              {personalized ? "Edit My Kitchen" : "Set up My Kitchen"}{" "}
+              <ArrowRightOutlined />
+            </Link>
+          </div>
           <div className="home-planner-banner">
             <div>
               <span className="eyebrow">MEET YOUR EVERYDAY MEAL PLANNER</span>
@@ -234,10 +295,20 @@ export default function Home() {
           </div>
           <div className="section-heading">
             <div>
-              <span className="eyebrow">FROM OUR RECIPE COLLECTION</span>
-              <h2>A little inspiration for your table.</h2>
+              <span className="eyebrow">
+                {personalized
+                  ? "BASED ON YOUR KITCHEN"
+                  : "FROM OUR RECIPE COLLECTION"}
+              </span>
+              <h2>
+                {personalized
+                  ? "Picked for your kitchen."
+                  : "A little inspiration for your table."}
+              </h2>
               <p>
-                Familiar flavors, with ingredient costs you can actually check.
+                {personalized
+                  ? `${profile.householdSize ? `For ${profile.householdSize} people. ` : ""}${profile.mealBudget ? `Meal budget: ${formatMoney(profile.mealBudget)} after pantry ingredients. ` : ""}Only complete, recent shopping estimates confirm a budget fit.`
+                  : "Familiar flavors, with ingredient costs you can actually check."}
               </p>
             </div>
             <Link className="text-link" to="/recipes">
@@ -254,9 +325,31 @@ export default function Home() {
                   />
                 ))
               : featured.map((recipe, index) => (
-                  <RecipeCard key={recipe.id} recipe={recipe} index={index} />
+                  <RecipeCard
+                    key={recipe.id}
+                    recipe={recipe}
+                    index={index}
+                    recommendation={
+                      personalized ? recommendations[index] : null
+                    }
+                  />
                 ))}
           </div>
+          {!recipesLoading &&
+            !recipeError &&
+            personalized &&
+            !featured.length && (
+              <div className="home-recommendation-empty">
+                <h3>No recipes fit these preferences yet.</h3>
+                <p>
+                  Try a longer cooking time, a higher meal budget, or fewer
+                  exclusions.
+                </p>
+                <Link className="text-link" to="/my-kitchen">
+                  Adjust my preferences <ArrowRightOutlined />
+                </Link>
+              </div>
+            )}
         </section>
         <section className="home-market">
           <div className="section-heading">

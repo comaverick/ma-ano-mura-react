@@ -278,3 +278,114 @@ test("source selection does not substitute another source for a missing quote", 
     screen.getByText("1 ingredient has no verified price."),
   ).toBeInTheDocument();
 });
+test("My Kitchen persists preferences, personalizes home and scales new meals without changing existing plans", () => {
+  mockMarket.recipes[0].ingredients.push("500 g chicken");
+  localStorage.setItem(
+    planning.STORAGE_KEY,
+    JSON.stringify({
+      favorites: ["chicken adobo"],
+      pantry: ["tomato"],
+      plans: [
+        {
+          date: planning.localDate(),
+          slot: "Lunch",
+          recipeKey: "chicken adobo",
+          servings: 2,
+        },
+      ],
+    }),
+  );
+  window.history.replaceState({}, "", "/my-kitchen");
+  render(<App />);
+  fireEvent.change(screen.getByLabelText("Household size"), {
+    target: { value: "4" },
+  });
+  fireEvent.change(screen.getByLabelText("Usual meal budget (₱)"), {
+    target: { value: "300" },
+  });
+  fireEvent.change(screen.getByLabelText("Dietary preference"), {
+    target: { value: "vegetarian" },
+  });
+  fireEvent.change(screen.getByLabelText("Ingredients to avoid"), {
+    target: { value: "shrimp" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Save preferences" }));
+  const saved = JSON.parse(localStorage.getItem(planning.STORAGE_KEY));
+  expect(saved.profile).toMatchObject({
+    householdSize: 4,
+    mealBudget: 300,
+    diet: "vegetarian",
+    avoid: ["shrimp"],
+  });
+  expect(saved.favorites).toEqual(["chicken adobo"]);
+  expect(saved.pantry).toEqual(["tomato"]);
+  expect(saved.plans[0].servings).toBe(2);
+  fireEvent.click(screen.getByRole("link", { name: "See my recommendations" }));
+  expect(
+    screen.getByRole("heading", { name: "Picked for your kitchen." }),
+  ).toBeInTheDocument();
+  expect(
+    document.querySelectorAll(".home-recipe-grid .recipe-card"),
+  ).toHaveLength(1);
+  fireEvent.click(screen.getByRole("link", { name: "Recipes", exact: true }));
+  expect(screen.getByLabelText("Use My Kitchen preferences")).toBeChecked();
+  const list = screen.getByLabelText("Recipes");
+  expect(
+    within(list).queryByRole("button", { name: /Chicken Adobo/ }),
+  ).not.toBeInTheDocument();
+  expect(screen.getByLabelText("Number of servings")).toHaveValue(4);
+  fireEvent.click(screen.getByRole("button", { name: "Plan this meal" }));
+  fireEvent.click(screen.getByRole("button", { name: "Add to plan" }));
+  const plans = JSON.parse(localStorage.getItem(planning.STORAGE_KEY)).plans;
+  expect(plans.find((p) => p.slot === "Dinner").servings).toBe(4);
+  expect(plans.find((p) => p.slot === "Lunch").servings).toBe(2);
+  fireEvent.click(screen.getByLabelText("Use My Kitchen preferences"));
+  fireEvent.click(within(list).getByRole("button", { name: /Chicken Adobo/ }));
+  expect(
+    screen.getByText("Outside your kitchen preferences."),
+  ).toBeInTheDocument();
+});
+test("profile defaults restore on reload and can reset without clearing the rest of the kitchen", () => {
+  localStorage.setItem(
+    planning.STORAGE_KEY,
+    JSON.stringify({
+      profile: { householdSize: 6, mealBudget: 250 },
+      favorites: ["chicken adobo"],
+    }),
+  );
+  window.history.replaceState({}, "", "/planner");
+  const view = render(<App />);
+  expect(screen.getByLabelText("People to feed")).toHaveValue(6);
+  expect(screen.getByLabelText("Meal budget (₱)")).toHaveValue(250);
+  view.unmount();
+  window.history.replaceState({}, "", "/my-kitchen");
+  render(<App />);
+  expect(screen.getByLabelText("Household size")).toHaveValue(6);
+  fireEvent.click(screen.getByRole("button", { name: "Reset preferences" }));
+  fireEvent.click(screen.getByRole("button", { name: "Save preferences" }));
+  const saved = JSON.parse(localStorage.getItem(planning.STORAGE_KEY));
+  expect(saved.profile.householdSize).toBe(null);
+  expect(saved.favorites).toEqual(["chicken adobo"]);
+});
+test("preferences remain usable for this visit when saving is blocked", () => {
+  const blocked = jest
+    .spyOn(Storage.prototype, "setItem")
+    .mockImplementation(() => {
+      throw new Error("Blocked");
+    });
+  try {
+    window.history.replaceState({}, "", "/my-kitchen");
+    render(<App />);
+    fireEvent.change(screen.getByLabelText("Household size"), {
+      target: { value: "5" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save preferences" }));
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "available for this visit only",
+    );
+    fireEvent.click(screen.getByRole("link", { name: "Recipes", exact: true }));
+    expect(screen.getByLabelText("Number of servings")).toHaveValue(5);
+  } finally {
+    blocked.mockRestore();
+  }
+});

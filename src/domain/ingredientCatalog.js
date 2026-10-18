@@ -146,7 +146,7 @@ const definitions = [
     "Tomato",
     "Vegetables",
     "kg",
-    "tomatoes|roma tomato|native tomato|plum tomato|tomatoes kamati",
+    "tomatoes|roma tomato|native tomato|plum tomato|tomatoes kamati|kamatis",
     180,
     100,
   ],

@@ -7,6 +7,7 @@ import {
   useMemo,
 } from "react";
 import planning from "../domain/planning.js";
+import profileDomain from "../domain/profile.js";
 const { STORAGE_KEY, cleanKitchen, recipeKey } = planning;
 const KitchenContext = createContext(null);
 function initialState() {
@@ -26,6 +27,13 @@ export function KitchenProvider({ children }) {
   const [data, setData] = useState(initial.data);
   const [storageError, setStorageError] = useState(initial.error);
   const [notice, setNotice] = useState("");
+  const saveProfile = useCallback((profile) => {
+    setData((current) => ({
+      ...current,
+      profile: profileDomain.cleanProfile(profile),
+    }));
+    setNotice("Your kitchen preferences have been updated.");
+  }, []);
   useEffect(() => {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -148,6 +156,7 @@ export function KitchenProvider({ children }) {
       removeMeal,
       setBudget,
       setMeasurement,
+      saveProfile,
     }),
     [
       data,
@@ -160,6 +169,7 @@ export function KitchenProvider({ children }) {
       removeMeal,
       setBudget,
       setMeasurement,
+      saveProfile,
     ],
   );
   return (
