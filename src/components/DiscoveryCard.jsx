@@ -67,7 +67,9 @@ export default function DiscoveryCard({ entry, href, onOpen, loading }) {
               </strong>
               <span>
                 {cost.ready ? "to buy" : "known subtotal"} ·{" "}
-                {cost.servings ? `${cost.servings} servings` : "servings vary"}
+                {Number(recipe.servings) > 0 && cost.servings
+                  ? `${cost.servings} servings`
+                  : "servings need review"}
               </span>
             </div>
             <ArrowUpOutlined aria-hidden="true" />

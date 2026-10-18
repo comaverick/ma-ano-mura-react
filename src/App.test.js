@@ -460,3 +460,16 @@ test("invalid recipe discovery amounts show an error and cannot produce a budget
   expect(screen.getByRole("alert")).toHaveTextContent("1–100 whole servings");
   expect(screen.getByRole("button", { name: "Choose for me" })).toBeDisabled();
 });
+test("recipes without original portions never claim a household estimate or qualify for a budget filter", () => {
+  mockMarket.recipes = [{ ...mockMarket.recipes[0], servings: null }];
+  window.history.replaceState({}, "", "/recipes");
+  render(<App />);
+  expect(
+    screen.getByText(/known subtotal · servings need review/),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Choose for me" })).toBeDisabled();
+  fireEvent.change(screen.getByLabelText("Recipe meal budget (₱)"), {
+    target: { value: "500" },
+  });
+  expect(screen.getByText("No meals match just yet.")).toBeInTheDocument();
+});
