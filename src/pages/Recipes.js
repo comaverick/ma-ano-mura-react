@@ -1,540 +1,505 @@
-import { useMemo, useState, useEffect, useDeferredValue } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useMemo, useEffect, useRef, useDeferredValue } from "react";
+import {
+  useSearchParams,
+  Link,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import { Alert, Skeleton } from "antd";
 import {
   SearchOutlined,
-  ClockCircleOutlined,
-  TeamOutlined,
   ArrowRightOutlined,
-  CheckOutlined,
-  InfoCircleOutlined,
+  ReloadOutlined,
+  HeartOutlined,
+  SlidersOutlined,
 } from "@ant-design/icons";
 import { useMarket } from "../context/MarketContext";
-import { loadLinkedRecipe } from "../services/marketData";
-import domainCosting from "../domain/costing.js";
-import {
-  formatMoney,
-  formatTime,
-  formatDate,
-  formatQuantity,
-  isStale,
-  formatSource,
-} from "../utils/format";
-import "./Recipes.css";
-import RecipeActions from "../components/RecipeActions";
-import IngredientMeasurement from "../components/IngredientMeasurement";
 import { useKitchen } from "../context/KitchenContext";
-import measurementsDomain from "../domain/measurements.js";
+import discovery from "../domain/discovery.js";
 import preferences from "../domain/preferences.js";
-const { priceRecipe, PRICE_SOURCES } = domainCosting;
-const statusLabels = {
-  unmatched: "Ingredient not matched",
-  "no-price": "No source quote",
-  quantity: "Quantity needs review",
-  "to-taste": "To taste · excluded",
-  water: "Water · excluded",
-  priced: "Included",
-};
+import costing from "../domain/costing.js";
+import DiscoveryCard from "../components/DiscoveryCard";
+import RecipeDetail from "./RecipeDetail";
+import "./Recipes.css";
+const { RECIPE_GROUPS, assessDiscovery, filterDiscovery } = discovery;
+const positive = (value, max = 1000000) =>
+  value !== null &&
+  value !== "" &&
+  Number.isFinite(Number(value)) &&
+  Number(value) > 0 &&
+  Number(value) <= max
+    ? Number(value)
+    : null;
 export default function Recipes() {
-  const { measurements, profile } = useKitchen();
+  const [params, setParams] = useSearchParams();
+  const navigate = useNavigate(),
+    location = useLocation();
+  const scroll = useRef(0);
+  const selected = params.get("recipe");
+  useEffect(() => {
+    const frame = requestAnimationFrame(() =>
+      window.scrollTo({
+        top: selected ? 0 : scroll.current,
+        behavior: "instant",
+      }),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [selected]);
+  function back() {
+    if (location.state?.recipeBrowser) navigate(-1);
+    else {
+      const next = new URLSearchParams(params);
+      next.delete("recipe");
+      setParams(next, { replace: true });
+    }
+  }
+  return selected ? (
+    <RecipeDetail key={selected} onBack={back} />
+  ) : (
+    <RecipeBrowser
+      onOpen={() => {
+        scroll.current = window.scrollY;
+      }}
+    />
+  );
+}
+function RecipeBrowser({ onOpen }) {
   const {
     recipes,
-    recipesLoading,
     priceIndex,
-    ingredients,
     loading,
+    recipesLoading,
     error,
     recipeError,
     refresh,
   } = useMarket();
+  const kitchen = useKitchen();
   const [params, setParams] = useSearchParams();
-  const query = params.get("q") || "";
-  const source = PRICE_SOURCES.some((s) => s.value === params.get("source"))
+  const query = params.get("q") || "",
+    deferred = useDeferredValue(query);
+  const group = RECIPE_GROUPS.some(([key]) => key === params.get("group"))
+    ? params.get("group")
+    : query.trim()
+      ? "all"
+      : "ulam";
+  const sort = ["recommended", "time", "cost", "pantry", "name"].includes(
+    params.get("sort"),
+  )
+    ? params.get("sort")
+    : "recommended";
+  const maxMinutes = [15, 30, 45, 60, 90, 120].includes(
+    Number(params.get("time")),
+  )
+    ? Number(params.get("time"))
+    : null;
+  const servings = positive(params.get("servings"), 100);
+  const defaultServings = kitchen.profile.householdSize || 4;
+  const targetServings = servings || defaultServings;
+  const budget = positive(params.get("budget"));
+  const invalidInputs =
+    (params.has("budget") && !budget) ||
+    (params.has("servings") && (!servings || !Number.isInteger(servings)));
+  const usePreferences =
+    params.get("preferences") === "off"
+      ? false
+      : params.get("preferences") === "on" ||
+        preferences.hasFoodRules(kitchen.profile);
+  const priced = params.get("priced") === "1",
+    saved = params.get("saved") === "1";
+  const page = Math.max(
+    1,
+    Math.min(200, Math.floor(positive(params.get("page"), 200) || 1)),
+  );
+  const source = costing.PRICE_SOURCES.some(
+    (item) => item.value === params.get("source"),
+  )
     ? params.get("source")
     : "best";
-  const deferred = useDeferredValue(query);
-  const [servings, setServings] = useState(null);
-  const [preferenceOverride, setPreferenceOverride] = useState(null);
-  const usePreferences =
-    preferenceOverride ?? preferences.hasFoodRules(profile);
-  const [detailOverride, setDetailOverride] = useState(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [detailError, setDetailError] = useState("");
-  const filtered = useMemo(
+  const entries = useMemo(
     () =>
-      recipes.filter(
-        (recipe) =>
-          recipe.name.toLowerCase().includes(deferred.trim().toLowerCase()) &&
-          (!usePreferences ||
-            preferences.preferenceMatch(recipe, profile).eligible),
-      ),
-    [recipes, deferred, usePreferences, profile],
+      assessDiscovery(recipes, priceIndex, {
+        profile: kitchen.profile,
+        pantry: kitchen.pantry,
+        measurements: kitchen.measurements,
+        source,
+        servings: targetServings,
+      }),
+    [
+      recipes,
+      priceIndex,
+      kitchen.profile,
+      kitchen.pantry,
+      kitchen.measurements,
+      source,
+      targetServings,
+    ],
   );
-  const selected =
-    recipes.find((recipe) => recipe.id === params.get("recipe")) ||
-    (query
-      ? filtered[0]
-      : filtered.find((recipe) => /^chicken adobo$/i.test(recipe.name))) ||
-    filtered[0];
-  const selectedId = selected?.id;
-  useEffect(() => {
-    setServings(null);
-    setDetailOverride(null);
-    setDetailError("");
-    if (!selectedId || selected?.local) return;
-    let active = true;
-    setDetailLoading(true);
-    loadLinkedRecipe(selectedId)
-      .then((links) => {
-        if (!active) return;
-        const names = new Map(ingredients.map((i) => [i.id, i.name]));
-        setDetailOverride(
-          links.flatMap((link) => {
-            if (link.quantity != null && link.unit)
-              return [
-                `${link.quantity} ${link.unit} ${names.get(link.ingredient_id) || link.original_name}`,
-              ];
-            return String(
-              link.original_name || names.get(link.ingredient_id) || "",
-            )
-              .split("|")
-              .filter(Boolean);
+  const results = useMemo(
+    () =>
+      invalidInputs
+        ? []
+        : filterDiscovery(entries, {
+            query: deferred,
+            group,
+            sort,
+            maxMinutes,
+            budget,
+            usePreferences,
+            priced,
+            saved,
+            favorites: kitchen.favorites,
           }),
-        );
-      })
-      .catch(() => {
-        if (active)
-          setDetailError(
-            "Ingredient details could not be loaded. Choose another recipe or try again later.",
-          );
-      })
-      .finally(() => {
-        if (active) setDetailLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [selectedId, selected?.local, ingredients]);
-  const recipe = useMemo(
-    () =>
-      selected
-        ? measurementsDomain.withMeasurements(
-            {
-              ...selected,
-              ingredients: detailOverride || selected.ingredients,
-            },
-            measurements,
-          )
-        : null,
-    [selected, detailOverride, measurements],
-  );
-  const requestedServings =
-    servings ?? (Number(recipe?.servings) > 0 ? profile.householdSize : null);
-  const preferenceCheck = recipe
-    ? preferences.preferenceMatch(recipe, profile)
-    : null;
-  const cost = useMemo(
-    () =>
-      recipe
-        ? priceRecipe(recipe, priceIndex, source, requestedServings)
-        : null,
-    [recipe, priceIndex, source, requestedServings],
+    [
+      entries,
+      deferred,
+      group,
+      sort,
+      maxMinutes,
+      budget,
+      usePreferences,
+      priced,
+      saved,
+      kitchen.favorites,
+      invalidInputs,
+    ],
   );
   function update(key, value) {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
-    if (key === "q") next.delete("recipe");
+    if (key !== "page") next.delete("page");
     setParams(next, { replace: true });
   }
-  const missingPrices =
-    cost?.missing.filter((row) =>
-      ["unmatched", "no-price"].includes(row.status),
-    ) || [];
-  const missingQuantity =
-    cost?.missing.filter((row) => row.status === "quantity") || [];
-  const stale =
-    cost?.rows.filter((row) => row.cost !== null && isStale(row.price?.date)) ||
-    [];
+  function clear() {
+    const next = new URLSearchParams();
+    if (params.has("preferences"))
+      next.set("preferences", params.get("preferences"));
+    setParams(next, { replace: true });
+  }
+  function href(recipe) {
+    const next = new URLSearchParams(params);
+    next.set("recipe", recipe.id);
+    next.set("servings", String(targetServings));
+    return `/recipes?${next}`;
+  }
+  const navigate = useNavigate();
+  const priceFilterBusy = loading && (!!budget || priced || sort === "cost");
+  const choices = results.filter(
+    (item) =>
+      item.recipe.ingredients?.length && Number(item.recipe.servings) > 0,
+  );
+  const completeChoices = choices.filter((item) => item.cost.ready);
+  const candidates = (completeChoices.length ? completeChoices : choices).slice(
+    0,
+    12,
+  );
+  function choose() {
+    if (!candidates.length) return;
+    onOpen();
+    navigate(
+      href(candidates[Math.floor(Math.random() * candidates.length)].recipe),
+      { state: { recipeBrowser: true } },
+    );
+  }
+  const hasFilters =
+    invalidInputs ||
+    !!query ||
+    group !== "ulam" ||
+    !!maxMinutes ||
+    !!budget ||
+    priced ||
+    saved ||
+    !!servings ||
+    sort !== "recommended";
   return (
-    <main className="page-shell recipes-page">
-      <section className="page-intro recipes-intro">
+    <main className="page-shell recipes-page recipe-discovery-page">
+      <section className="discovery-hero">
         <div>
-          <span className="eyebrow">YOUR NEXT ULAM, FIGURED OUT</span>
+          <span className="eyebrow">THE EVERYDAY ULAM COLLECTION</span>
           <h1>
-            From “anong ulam?”
-            <br />
-            to <em>kain na.</em>
+            Anong ulam? <em>Let’s choose.</em>
           </h1>
           <p>
-            Find a Filipino favorite, see the ingredients, and work out the
-            cost. Simple planning for the food you love.
+            Find a familiar favorite, then make it fit your table.
+            {!recipesLoading && (
+              <span className="discovery-recipe-count">
+                {" "}
+                {recipes.length.toLocaleString()} recipes. Plenty of sarap.
+              </span>
+            )}
           </p>
         </div>
-        <div className="recipe-intro-note">
-          <span aria-hidden="true">🍽️</span>
-          <strong>A recipe for every day.</strong>
-          <span>
-            {recipesLoading
-              ? "Loading the collection…"
-              : `${recipes.length.toLocaleString()} recipes, ready to explore`}
-          </span>
+        <div className="discovery-hero-actions">
+          <button
+            type="button"
+            className="button button-dark"
+            onClick={choose}
+            disabled={recipesLoading || !candidates.length || priceFilterBusy}
+          >
+            <ReloadOutlined aria-hidden="true" />
+            Choose for me
+          </button>
+          <Link className="text-link" to="/planner">
+            Plan the week <ArrowRightOutlined aria-hidden="true" />
+          </Link>
         </div>
       </section>
-      <section className="recipes-workspace" aria-label="Recipe collection">
-        <aside className="recipe-library">
-          <div className="recipe-library-heading">
-            <h2>The collection</h2>
-            <span>{filtered.length}</span>
-          </div>
-          <label className="search-field">
-            <SearchOutlined />
+      {(error || recipeError) && (
+        <Alert
+          className="data-warning"
+          type="warning"
+          showIcon
+          title={error || recipeError}
+          action={
+            error ? <button onClick={refresh}>Retry prices</button> : undefined
+          }
+        />
+      )}
+      <section className="discovery-controls" aria-label="Find your ulam">
+        <div className="discovery-search-row">
+          <label className="search-field discovery-search">
+            <SearchOutlined aria-hidden="true" />
             <input
+              type="search"
               aria-label="Search recipes"
               value={query}
-              onChange={(event) => update("q", event.target.value)}
-              placeholder="Find your next favorite…"
+              placeholder="Search a dish or ingredient… adobo, chicken, kamatis"
+              onChange={(e) => update("q", e.target.value)}
             />
           </label>
-          {preferences.hasFoodRules(profile) && (
-            <label className="preference-filter">
+          <button
+            className={`discovery-saved-toggle ${saved ? "is-selected" : ""}`}
+            type="button"
+            aria-pressed={saved}
+            onClick={() => update("saved", saved ? "" : "1")}
+          >
+            <HeartOutlined aria-hidden="true" /> Saved
+            <span>{kitchen.favorites.length}</span>
+          </button>
+        </div>
+        <div className="discovery-groups" aria-label="Browse recipe groups">
+          {RECIPE_GROUPS.map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={group === key}
+              onClick={() => update("group", key)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="discovery-filters">
+          <label>
+            Cooking time
+            <select
+              aria-label="Filter cooking time"
+              value={maxMinutes || ""}
+              onChange={(e) => update("time", e.target.value)}
+            >
+              <option value="">Any time</option>
+              {[15, 30, 45, 60, 90, 120].map((x) => (
+                <option key={x} value={x}>
+                  Up to {x} min
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Meal budget (₱)
+            <input
+              aria-label="Recipe meal budget (₱)"
+              type="number"
+              min="1"
+              max="1000000"
+              step="0.01"
+              value={params.get("budget") || ""}
+              onChange={(e) => update("budget", e.target.value)}
+              placeholder="Any budget"
+            />
+          </label>
+          <label>
+            People to feed
+            <input
+              aria-label="Recipe servings"
+              type="number"
+              min="1"
+              max="100"
+              step="1"
+              value={params.get("servings") || ""}
+              onChange={(e) => update("servings", e.target.value)}
+              placeholder={`${defaultServings} (default)`}
+            />
+          </label>
+          <label>
+            Sort recipes
+            <select
+              aria-label="Sort recipes"
+              value={sort}
+              onChange={(e) => update("sort", e.target.value)}
+            >
+              <option value="recommended">Recommended for you</option>
+              <option value="time">Quickest first</option>
+              <option value="cost">Lowest complete cost</option>
+              <option value="pantry">Use my pantry first</option>
+              <option value="name">A–Z</option>
+            </select>
+          </label>
+        </div>
+        {invalidInputs && (
+          <p className="discovery-input-error" role="alert">
+            Enter a positive meal budget and 1–100 whole servings to apply these
+            filters.
+          </p>
+        )}
+        <div className="discovery-filter-foot">
+          <div>
+            <label className="discovery-check">
               <input
                 type="checkbox"
-                checked={usePreferences}
-                onChange={(event) =>
-                  setPreferenceOverride(event.target.checked)
-                }
+                checked={priced}
+                onChange={(e) => update("priced", e.target.checked ? "1" : "")}
               />
-              Use My Kitchen preferences
+              Complete prices only
             </label>
-          )}
-          <Link className="text-link" to="/my-kitchen">
-            My Kitchen preferences →
-          </Link>
-          <div className="recipe-list" aria-label="Recipes">
-            {recipesLoading ? (
-              <Skeleton active paragraph={{ rows: 8 }} />
-            ) : filtered.length ? (
-              filtered.map((recipe) => (
-                <button
-                  type="button"
-                  key={recipe.id}
-                  onClick={() => update("recipe", recipe.id)}
-                  aria-current={selectedId === recipe.id ? "true" : undefined}
-                  className={
-                    selectedId === recipe.id ? "recipe-list-active" : ""
+            {preferences.hasFoodRules(kitchen.profile) && (
+              <label className="discovery-check">
+                <input
+                  type="checkbox"
+                  checked={usePreferences}
+                  onChange={(e) =>
+                    update("preferences", e.target.checked ? "on" : "off")
                   }
-                >
-                  <strong>{recipe.name}</strong>
-                  <span>
-                    {recipe.servings
-                      ? `${recipe.servings} servings`
-                      : "Servings vary"}
-                    <ArrowRightOutlined />
-                  </span>
-                </button>
-              ))
-            ) : (
-              <p className="state-message">
-                {usePreferences
-                  ? "No recipes match your search and kitchen preferences."
-                  : `No recipes match “${query}”.`}
-                <br />
-                <button className="text-link" onClick={() => update("q", "")}>
-                  Clear search
-                </button>
-              </p>
+                />
+                Use My Kitchen preferences
+              </label>
             )}
           </div>
-        </aside>
-        <article
-          className="recipe-detail-panel"
-          aria-busy={detailLoading || loading}
-        >
-          {recipeError && <Alert type="error" title={recipeError} showIcon />}
-          {recipesLoading ? (
-            <Skeleton active paragraph={{ rows: 12 }} />
-          ) : recipe && cost ? (
-            <>
-              <header className="recipe-detail-header">
-                <span className="eyebrow">THE ULAM COLLECTION</span>
-                <h2>{recipe.name}</h2>
-                <div className="recipe-meta-row">
-                  <span>
-                    <ClockCircleOutlined />
-                    {formatTime(recipe)}
-                  </span>
-                  <span>
-                    <TeamOutlined />
-                    {recipe.servings
-                      ? `${recipe.servings} original servings`
-                      : "Servings not listed"}
-                  </span>
-                </div>
-              </header>
-              <RecipeActions
-                recipe={recipe}
-                servings={requestedServings || recipe.servings}
-              />
-              {preferenceCheck && !preferenceCheck.eligible && (
-                <p className="preference-note">
-                  <strong>Outside your kitchen preferences.</strong>{" "}
-                  {preferenceCheck.conflicts.join(". ")}.{" "}
-                  <Link to="/my-kitchen">Edit preferences</Link>
-                </p>
-              )}
-              <div className="recipe-settings">
-                <div>
-                  <label>Price source</label>
-                  <div
-                    className="source-tabs"
-                    aria-label="Choose recipe price source"
-                  >
-                    {PRICE_SOURCES.map((item) => (
-                      <button
-                        key={item.value}
-                        type="button"
-                        aria-pressed={source === item.value}
-                        onClick={() => update("source", item.value)}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <label className="servings-control">
-                  Servings
-                  <input
-                    type="number"
-                    aria-label="Number of servings"
-                    min="1"
-                    max="100"
-                    disabled={!recipe.servings}
-                    value={requestedServings || recipe.servings || ""}
-                    onChange={(event) =>
-                      setServings(
-                        event.target.value
-                          ? Math.max(
-                              1,
-                              Math.min(100, Number(event.target.value)),
-                            )
-                          : null,
-                      )
-                    }
-                  />
-                </label>
-              </div>
-              {profile.householdSize &&
-                servings === null &&
-                Number(recipe.servings) > 0 && (
-                  <p className="kitchen-hint">
-                    Using your household default of {profile.householdSize}{" "}
-                    servings. Change it above for this meal.
-                  </p>
-                )}
-              {error && (
-                <Alert
-                  className="data-warning"
-                  type="warning"
-                  showIcon
-                  title={error}
-                  action={<button onClick={refresh}>Retry</button>}
-                />
-              )}
-              {detailError && (
-                <Alert
-                  className="data-warning"
-                  type="error"
-                  title={detailError}
-                  showIcon
-                />
-              )}
-              <section className="recipe-cost-summary">
-                <div>
-                  <span>
-                    {cost.missing.length
-                      ? "KNOWN INGREDIENT SUBTOTAL"
-                      : "ESTIMATED INGREDIENT COST"}
-                  </span>
-                  <strong>
-                    {loading
-                      ? "…"
-                      : cost.pricedCount
-                        ? formatMoney(cost.total)
-                        : "—"}
-                  </strong>
-                  <small>
-                    {cost.pricedCount && cost.servings
-                      ? `${formatMoney(cost.total / cost.servings)} ${cost.missing.length ? "subtotal" : "estimate"} per serving`
-                      : "Based on available source quotes"}
-                  </small>
-                </div>
-                <div className="recipe-coverage">
-                  <span>
-                    {loading
-                      ? "Loading prices…"
-                      : `${cost.pricedCount} of ${cost.requiredCount} measured ingredients priced`}
-                  </span>
-                  <div
-                    role="progressbar"
-                    aria-label="Ingredient price coverage"
-                    aria-valuenow={cost.coverage}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                  >
-                    <span style={{ width: `${cost.coverage}%` }} />
-                  </div>
-                  <p>
-                    {cost.missing.length
-                      ? "The subtotal excludes unpriced ingredients."
-                      : "All listed, measured ingredients are included."}
-                  </p>
-                </div>
-              </section>
-              {loading || detailLoading ? (
-                <Skeleton active paragraph={{ rows: 8 }} />
-              ) : (
-                <>
-                  {missingPrices.length > 0 && (
-                    <div className="recipe-coverage-note">
-                      <InfoCircleOutlined />
-                      <p>
-                        <strong>
-                          {missingPrices.length} ingredient
-                          {missingPrices.length === 1 ? " has" : "s have"} no
-                          verified price.
-                        </strong>{" "}
-                        {missingPrices
-                          .map(
-                            (row) =>
-                              row.definition?.name ||
-                              row.parsed.name ||
-                              row.rawName,
-                          )
-                          .join(", ")}
-                        . These are excluded from the subtotal.
-                      </p>
-                    </div>
-                  )}
-                  {missingQuantity.length > 0 && (
-                    <div className="recipe-coverage-note">
-                      <InfoCircleOutlined />
-                      <p>
-                        <strong>
-                          {missingQuantity.length} ingredient
-                          {missingQuantity.length === 1 ? " needs" : "s need"} a
-                          quantity or unit.
-                        </strong>{" "}
-                        The recipe doesn’t provide enough information to
-                        calculate these costs.
-                      </p>
-                    </div>
-                  )}
-                  {stale.length > 0 && (
-                    <p className="stale-note">
-                      {stale.length} ingredient quote
-                      {stale.length === 1 ? " is" : "s are"} older than 7 days.
-                      Check the dates below.
-                    </p>
-                  )}
-                  <section className="recipe-ingredients-section">
-                    <div className="recipe-section-heading">
-                      <h3>Your ingredient list</h3>
-                      <span>
-                        {cost.servings
-                          ? `For ${cost.servings} servings`
-                          : "As listed in the recipe"}
-                      </span>
-                    </div>
-                    <div className="recipe-ingredients-table">
-                      {cost.rows.map((row) => (
-                        <div
-                          className={`recipe-ingredient-row row-${row.status}`}
-                          key={row.id}
-                        >
-                          <span className="ingredient-row-check">
-                            {row.cost !== null ? <CheckOutlined /> : "—"}
-                          </span>
-                          <div className="recipe-ingredient-name">
-                            <strong>{row.rawName}</strong>
-                            <small>
-                              {cost.servings &&
-                              cost.servings !== Number(recipe.servings)
-                                ? `Scaled: ${formatQuantity(row.quantity, row.parsed.unit)} · `
-                                : ""}
-                              {row.conversion.estimated && row.cost !== null
-                                ? `${row.conversion.reason}. `
-                                : ""}
-                              {row.price
-                                ? `${formatSource(row.price.source)} · ${row.price.ingredientName} · ${formatDate(row.price.date)}`
-                                : statusLabels[row.status]}
-                            </small>
-                            <IngredientMeasurement
-                              key={`${selectedId}:${row.id}`}
-                              recipe={recipe}
-                              row={row}
-                            />
-                          </div>
-                          <div className="recipe-ingredient-price">
-                            <strong>
-                              {row.cost !== null ? formatMoney(row.cost) : "—"}
-                            </strong>
-                            <small>
-                              {row.cost !== null
-                                ? row.conversion.estimated
-                                  ? "Estimate"
-                                  : "Ingredient cost"
-                                : row.price && row.status === "quantity"
-                                  ? `${formatMoney(row.price.avg_price)} / ${row.definition.unit} · quantity needed`
-                                  : statusLabels[row.status]}
-                            </small>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="recipe-calculation-note">
-                      Costs use the amount needed, rather than the price of a
-                      whole pack. Cup, piece, and density conversions are
-                      approximate where indicated. Water and seasonings without
-                      quantities are excluded. Variable-weight SM packages use a
-                      conservative unit estimate based on their minimum stated
-                      weight. “Lowest available” uses the lowest recent quote
-                      across the two sources.
-                    </p>
-                  </section>
-                  {recipe.instructions?.length > 0 && (
-                    <section className="recipe-instructions">
-                      <div className="recipe-section-heading">
-                        <h3>Let’s get cooking.</h3>
-                        <span>{recipe.instructions.length} steps</span>
-                      </div>
-                      <ol>
-                        {recipe.instructions.map((step, index) => (
-                          <li key={index}>
-                            <span>{String(index + 1).padStart(2, "0")}</span>
-                            <p>{step}</p>
-                          </li>
-                        ))}
-                      </ol>
-                    </section>
-                  )}
-                  {!recipe.ingredients.length && !detailLoading && (
-                    <p className="state-message">
-                      No ingredient details are available for this recipe yet.
-                    </p>
-                  )}
-                  <Link className="text-link recipe-market-link" to="/prices">
-                    Explore all ingredient prices <ArrowRightOutlined />
-                  </Link>
-                </>
-              )}
-            </>
-          ) : (
-            <div className="state-message">
-              Choose a recipe from the collection to get started.
-            </div>
+          <Link className="text-link" to="/my-kitchen">
+            <SlidersOutlined aria-hidden="true" /> My Kitchen preferences
+          </Link>
+        </div>
+      </section>
+      <section
+        className="discovery-results"
+        aria-label="Recipes"
+        aria-busy={recipesLoading || priceFilterBusy || query !== deferred}
+      >
+        <div className="discovery-result-heading">
+          <div>
+            <span className="eyebrow">A LITTLE INSPIRATION FOR YOUR TABLE</span>
+            <h2>
+              {saved
+                ? "Your saved favorites."
+                : RECIPE_GROUPS.find(([key]) => key === group)?.[1] ===
+                    "All ulam"
+                  ? "Find a little sarap."
+                  : `${RECIPE_GROUPS.find(([key]) => key === group)?.[1]}.`}
+            </h2>
+            <p role="status">
+              {recipesLoading || priceFilterBusy
+                ? "Finding meals for your table…"
+                : `${results.length.toLocaleString()} recipes${budget ? " with complete shopping estimates within your budget" : " to choose from"} · for ${targetServings} people`}
+            </p>
+          </div>
+          {hasFilters && (
+            <button
+              className="text-link discovery-clear"
+              type="button"
+              onClick={clear}
+            >
+              Clear filters
+            </button>
           )}
-        </article>
+        </div>
+        <p className="discovery-cost-note">
+          Prices show what you need to buy after pantry ingredients. Partial
+          costs are labelled; budget filters use complete, recent estimates.
+        </p>
+        {recipesLoading || priceFilterBusy ? (
+          <div className="discovery-grid">
+            {Array.from({ length: 8 }, (_, i) => (
+              <div key={i} className="discovery-skeleton">
+                <Skeleton active paragraph={{ rows: 4 }} />
+              </div>
+            ))}
+          </div>
+        ) : results.length ? (
+          <>
+            <div className="discovery-grid">
+              {results.slice(0, page * 12).map((entry) => (
+                <DiscoveryCard
+                  key={entry.recipe.id}
+                  entry={entry}
+                  loading={loading}
+                  href={href(entry.recipe)}
+                  onOpen={onOpen}
+                />
+              ))}
+            </div>
+            <div className="discovery-load-more">
+              <p>
+                Showing {Math.min(page * 12, results.length)} of{" "}
+                {results.length.toLocaleString()} recipes
+              </p>
+              {results.length > page * 12 && (
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => update("page", String(page + 1))}
+                >
+                  Show 12 more recipes <ArrowRightOutlined aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="discovery-empty">
+            <SearchOutlined aria-hidden="true" />
+            <h3>
+              {saved && !kitchen.favorites.length
+                ? "Your favorites start here."
+                : "No meals match just yet."}
+            </h3>
+            <p>
+              {saved && !kitchen.favorites.length
+                ? "Tap the heart on any recipe to keep it here. Browse the collection and save a few you love."
+                : "Try another ingredient, a little more cooking time, or a different budget."}
+              {usePreferences
+                ? " Your My Kitchen preferences are also applied."
+                : ""}
+            </p>
+            <button
+              type="button"
+              className="button button-dark"
+              onClick={clear}
+            >
+              Reset recipe filters
+            </button>
+            {usePreferences && (
+              <button
+                type="button"
+                className="text-link"
+                onClick={() => update("preferences", "off")}
+              >
+                Browse without My Kitchen preferences
+              </button>
+            )}
+          </div>
+        )}
+      </section>
+      <section className="discovery-bottom">
+        <div>
+          <span className="eyebrow">FOUND A FEW FAVORITES?</span>
+          <h2>Good meals make a better week.</h2>
+          <p>
+            Save what you love, plan your meals, and bring one list to the
+            market.
+          </p>
+        </div>
+        <Link className="button button-dark" to="/planner">
+          Build my meal plan <ArrowRightOutlined aria-hidden="true" />
+        </Link>
       </section>
     </main>
   );

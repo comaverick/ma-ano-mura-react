@@ -2,6 +2,14 @@
 
 A Filipino meal budget planner using NCR ingredient prices from DA Pricewatch and SM Supermarkets. The React app includes recipe search and cost estimates, ingredient price histories, and category browsing.
 
+## Choose an ulam
+
+The **Recipes** tab opens an illustrated gallery, with 12 cards at a time. Browse ulam, proteins, vegetables, rice/noodles, or merienda; search a dish or a listed ingredient, including aliases such as kamatis, hipon and manok. A search without an explicit group checks the whole collection. Cards show cooking time, ingredient count, shopping cost after pantry items, portions and price completeness. Costs use the same household portion count across the gallery (your saved household size, or four people by default), and opening a recipe carries those portions into the detail view.
+
+Combine cooking time, meal budget, servings, complete-price and saved-only filters. Budget matches require complete, recent shopping costs; partial subtotals never qualify. Sort by recommendations, cooking time, complete cost, pantry use or name. **Choose for me** picks from matching recipes, preferring complete estimates when available. Save directly from a card, or open a focused recipe page for measurements and cooking steps. Browse filters, pagination and scroll position survive returning from the recipe, including with browser Back. Existing recipe URLs continue to work; unknown recipe IDs have a recovery link.
+
+The app uses a shared warm color palette, larger typography, rounded cards and controls, and food illustrations across its redesigned home, recipe gallery, planner, market, categories and kitchen profile. The layout adapts to narrow phones and preserves print layouts for shopping lists.
+
 ## Plan meals and shopping
 
 Open **My Kitchen** in the navigation to set household size, a usual meal budget, dietary preference (including vegetarian or pescatarian), preferred proteins, ingredients to avoid, cooking time, ingredient count and chili preference. Save the profile to update household portions and budget defaults for new meals. Existing plans keep their saved servings; resetting preferences preserves favorites, pantry items, measurements and meal plans.

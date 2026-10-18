@@ -19,6 +19,7 @@ import { KitchenProvider, useKitchen } from "./context/KitchenContext";
 import Planner from "./pages/Planner";
 import Coverage from "./pages/Coverage";
 import MyKitchen from "./pages/MyKitchen";
+import "./Design.css";
 function KitchenNotice() {
   const { storageError, notice } = useKitchen();
   return (
@@ -40,10 +41,10 @@ function App() {
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: "#265b3d",
-          borderRadius: 12,
-          fontFamily: '"DM Sans", "Segoe UI", sans-serif',
-          colorText: "#20372b",
+          colorPrimary: "#b34d2b",
+          borderRadius: 16,
+          fontFamily: '"Manrope", "Segoe UI", sans-serif',
+          colorText: "#292e28",
         },
       }}
     >

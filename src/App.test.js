@@ -227,7 +227,7 @@ test("home search opens real filtered recipe results", async () => {
   );
   expect(window.location.search).toContain("q=Sinigang");
   expect(
-    screen.queryByRole("button", { name: /Chicken Adobo 2 servings/ }),
+    screen.queryByRole("link", { name: "View recipe: Chicken Adobo" }),
   ).not.toBeInTheDocument();
 });
 test("ingredient search opens prices and categories link to the correct filter", async () => {
@@ -278,7 +278,7 @@ test("source selection does not substitute another source for a missing quote", 
     screen.getByText("1 ingredient has no verified price."),
   ).toBeInTheDocument();
 });
-test("My Kitchen persists preferences, personalizes home and scales new meals without changing existing plans", () => {
+test("My Kitchen persists preferences, personalizes home and scales new meals without changing existing plans", async () => {
   mockMarket.recipes[0].ingredients.push("500 g chicken");
   localStorage.setItem(
     planning.STORAGE_KEY,
@@ -331,16 +331,22 @@ test("My Kitchen persists preferences, personalizes home and scales new meals wi
   expect(screen.getByLabelText("Use My Kitchen preferences")).toBeChecked();
   const list = screen.getByLabelText("Recipes");
   expect(
-    within(list).queryByRole("button", { name: /Chicken Adobo/ }),
+    within(list).queryByRole("link", { name: "View recipe: Chicken Adobo" }),
   ).not.toBeInTheDocument();
+  fireEvent.click(
+    within(list).getByRole("link", { name: "View recipe: Pork Sinigang" }),
+  );
   expect(screen.getByLabelText("Number of servings")).toHaveValue(4);
   fireEvent.click(screen.getByRole("button", { name: "Plan this meal" }));
   fireEvent.click(screen.getByRole("button", { name: "Add to plan" }));
   const plans = JSON.parse(localStorage.getItem(planning.STORAGE_KEY)).plans;
   expect(plans.find((p) => p.slot === "Dinner").servings).toBe(4);
   expect(plans.find((p) => p.slot === "Lunch").servings).toBe(2);
-  fireEvent.click(screen.getByLabelText("Use My Kitchen preferences"));
-  fireEvent.click(within(list).getByRole("button", { name: /Chicken Adobo/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Back to recipes" }));
+  fireEvent.click(await screen.findByLabelText("Use My Kitchen preferences"));
+  fireEvent.click(
+    screen.getByRole("link", { name: "View recipe: Chicken Adobo" }),
+  );
   expect(
     screen.getByText("Outside your kitchen preferences."),
   ).toBeInTheDocument();
@@ -384,8 +390,73 @@ test("preferences remain usable for this visit when saving is blocked", () => {
       "available for this visit only",
     );
     fireEvent.click(screen.getByRole("link", { name: "Recipes", exact: true }));
+    fireEvent.click(
+      screen.getByRole("link", { name: "View recipe: Chicken Adobo" }),
+    );
     expect(screen.getByLabelText("Number of servings")).toHaveValue(5);
   } finally {
     blocked.mockRestore();
   }
+});
+test("recipe discovery starts with a gallery and keeps filters when opening and returning from a recipe", async () => {
+  window.history.replaceState({}, "", "/recipes");
+  render(<App />);
+  expect(screen.queryByLabelText("Number of servings")).not.toBeInTheDocument();
+  expect(screen.getAllByText("to buy · 4 servings")).toHaveLength(2);
+  expect(
+    screen.getByRole("link", { name: "View recipe: Chicken Adobo" }),
+  ).toBeInTheDocument();
+  fireEvent.change(screen.getByRole("searchbox", { name: "Search recipes" }), {
+    target: { value: "kamatis" },
+  });
+  fireEvent.change(screen.getByLabelText("Filter cooking time"), {
+    target: { value: "30" },
+  });
+  fireEvent.change(screen.getByLabelText("Recipe servings"), {
+    target: { value: "4" },
+  });
+  fireEvent.change(screen.getByLabelText("Recipe meal budget (₱)"), {
+    target: { value: "80" },
+  });
+  expect(screen.getByRole("button", { name: "Choose for me" })).toBeDisabled();
+  expect(screen.getByText("No meals match just yet.")).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Recipe meal budget (₱)"), {
+    target: { value: "150" },
+  });
+  fireEvent.click(
+    screen.getByRole("link", { name: "View recipe: Chicken Adobo" }),
+  );
+  expect(screen.getByLabelText("Number of servings")).toHaveValue(4);
+  fireEvent.click(screen.getByRole("button", { name: "Back to recipes" }));
+  expect(
+    await screen.findByRole("searchbox", { name: "Search recipes" }),
+  ).toHaveValue("kamatis");
+  expect(screen.getByLabelText("Filter cooking time")).toHaveValue("30");
+  expect(screen.getByLabelText("Recipe meal budget (₱)")).toHaveValue(150);
+  fireEvent.click(screen.getByRole("button", { name: "Choose for me" }));
+  expect(
+    screen.getByRole("heading", { name: "Chicken Adobo" }),
+  ).toBeInTheDocument();
+});
+test("recipe gallery favorites can be saved and filtered without opening a recipe", () => {
+  window.history.replaceState({}, "", "/recipes");
+  render(<App />);
+  fireEvent.click(screen.getByRole("button", { name: "Save Pork Sinigang" }));
+  fireEvent.click(screen.getByRole("button", { name: /Saved/ }));
+  expect(
+    screen.getByRole("link", { name: "View recipe: Pork Sinigang" }),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole("link", { name: "View recipe: Chicken Adobo" }),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByLabelText("Number of servings")).not.toBeInTheDocument();
+});
+test("invalid recipe discovery amounts show an error and cannot produce a budget match", () => {
+  window.history.replaceState({}, "", "/recipes");
+  render(<App />);
+  fireEvent.change(screen.getByLabelText("Recipe servings"), {
+    target: { value: "2.5" },
+  });
+  expect(screen.getByRole("alert")).toHaveTextContent("1–100 whole servings");
+  expect(screen.getByRole("button", { name: "Choose for me" })).toBeDisabled();
 });

@@ -105,7 +105,9 @@ function recipeTraits(recipe) {
       groups.add("pork");
     }
     if (
-      !/\b(broth|stock|cube|cubes|powder|sauce|paste|seasoning)\b/.test(names)
+      !/\b(broth|stock|cube|cubes|powder|sauce|paste|seasoning)\b/.test(
+        key || normalizeName(parsed.name),
+      )
     ) {
       for (const group of groups) proteins.add(group);
     }

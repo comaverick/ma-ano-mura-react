@@ -1,0 +1,26 @@
+.dish-art {
+  width: 100%;
+  height: 100%;
+  background: var(--dish-background, #e9eddf);
+  position: relative;
+  overflow: hidden;
+}
+.dish-art svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transition: transform 0.35s;
+}
+.dish-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(#473d2320 0.6px, transparent 0.6px);
+  background-size: 5px 5px;
+  opacity: 0.22;
+  pointer-events: none;
+}
+.discovery-card:hover .dish-art svg,
+.recipe-card:hover .dish-art svg {
+  transform: scale(1.04) rotate(-2deg);
+}

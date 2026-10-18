@@ -8,6 +8,8 @@ import { useMarket } from "../../context/MarketContext";
 import domainCosting from "../../domain/costing.js";
 import { formatMoney, formatTime } from "../../utils/format";
 import "./RecipeCard.css";
+import DishArt from "../DishArt";
+import discovery from "../../domain/discovery.js";
 import { useKitchen } from "../../context/KitchenContext";
 import measurementsDomain from "../../domain/measurements.js";
 const { priceRecipe } = domainCosting;
@@ -26,24 +28,16 @@ export default function RecipeCard({
       "best",
       profile.householdSize,
     );
-  const emoji = /chicken|manok/i.test(recipe.name)
-    ? "🍗"
-    : /pork|baboy/i.test(recipe.name)
-      ? "🍖"
-      : /fish|bangus|tilapia/i.test(recipe.name)
-        ? "🐟"
-        : /sinigang|soup/i.test(recipe.name)
-          ? "🥣"
-          : "🍲";
   return (
     <Link
       className={`recipe-card recipe-card-${index % 3}`}
       to={`/recipes?recipe=${encodeURIComponent(recipe.id)}`}
     >
       <div className="recipe-card-art">
-        <span>{emoji}</span>
-        <span className="recipe-card-label">THE ULAM COLLECTION</span>
-        <span className="recipe-card-number">0{index + 1}</span>
+        <DishArt recipe={recipe} />
+        <span className="recipe-card-label">
+          {discovery.discoveryMetadata(recipe).label}
+        </span>
       </div>
       <div className="recipe-card-body">
         <div className="recipe-card-meta">

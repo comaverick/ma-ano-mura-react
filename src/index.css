@@ -1,13 +1,19 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;650;700;800&family=DM+Serif+Display:ital@0;1&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;650;700;800&family=Instrument+Serif:ital@0;1&display=swap");
 :root {
-  --ink: #20372b;
-  --green: #265b3d;
-  --muted: #70796f;
-  --paper: #faf9f5;
-  --white: #fff;
-  --line: #e3e5db;
-  --lime: #d8eb94;
-  --serif: "DM Serif Display", Georgia, serif;
+  --ink: #292e28;
+  --green: #284d3a;
+  --accent: #b34d2b;
+  --accent-soft: #f5e0d2;
+  --forest: #223e30;
+  --surface: #fffefb;
+  --shadow: 0 8px 30px #332b1e06;
+  --muted: #5c6258;
+  --paper: #f6f3ed;
+  --white: #fffefb;
+  --line: #e3ded3;
+  --lime: #e8ecce;
+  --serif: "Manrope", "Segoe UI", sans-serif;
+  --display: "Instrument Serif", Georgia, serif;
 }
 * {
   box-sizing: border-box;
@@ -20,18 +26,22 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: "DM Sans", "Segoe UI", sans-serif;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 button,
 a,
 input,
-select {
+select,
+textarea {
   -webkit-tap-highlight-color: transparent;
 }
 a {
@@ -58,7 +68,7 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 3px solid #729449;
+  outline: 3px solid var(--accent);
   outline-offset: 4px;
 }
 ::selection {
