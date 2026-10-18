@@ -26,6 +26,8 @@ import IngredientMeasurement from "../components/IngredientMeasurement";
 import { useKitchen } from "../context/KitchenContext";
 import measurementsDomain from "../domain/measurements.js";
 import preferences from "../domain/preferences.js";
+import RecipePhoto from "../components/RecipePhoto";
+import { getRecipePhoto } from "../domain/recipePhotos";
 const { priceRecipe, PRICE_SOURCES } = domainCosting;
 const statusLabels = {
   unmatched: "Ingredient not matched",
@@ -149,6 +151,7 @@ export default function RecipeDetail({ onBack }) {
   const stale =
     cost?.rows.filter((row) => row.cost !== null && isStale(row.price?.date)) ||
     [];
+  const photo = getRecipePhoto(recipe);
   return (
     <main className="page-shell recipe-detail-page">
       <div className="recipe-breadcrumb">
@@ -166,6 +169,27 @@ export default function RecipeDetail({ onBack }) {
           <Skeleton active paragraph={{ rows: 12 }} />
         ) : recipe && cost ? (
           <>
+            {photo && (
+              <figure className="recipe-detail-photo">
+                <RecipePhoto
+                  recipe={recipe}
+                  priority
+                  detail
+                  sizes="(max-width: 800px) 100vw, 1100px"
+                />
+                <figcaption>
+                  {photo.label} · Serving suggestion; your recipe may look
+                  different. Photo by{" "}
+                  <a href={photo.source} target="_blank" rel="noreferrer">
+                    {photo.author}
+                  </a>
+                  {" · "}
+                  <a href={photo.licenseUrl} target="_blank" rel="noreferrer">
+                    {photo.license}
+                  </a>
+                </figcaption>
+              </figure>
+            )}
             <header className="recipe-detail-header">
               <span className="eyebrow">THE ULAM COLLECTION</span>
               <h1 ref={heading} tabIndex={-1}>

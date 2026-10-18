@@ -25,6 +25,9 @@ export default function Footer() {
         <Link to="/prices">
           Explore market prices <ArrowRightOutlined />
         </Link>
+        <Link to="/photo-credits">
+          Photo credits <ArrowRightOutlined />
+        </Link>
       </div>
       <p className="footer-note">
         NCR estimates from DA market monitoring & SM Supermarkets.

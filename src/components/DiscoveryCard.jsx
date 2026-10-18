@@ -8,7 +8,7 @@ import {
 import { useKitchen } from "../context/KitchenContext";
 import planning from "../domain/planning.js";
 import { formatMoney } from "../utils/format";
-import DishArt from "./DishArt";
+import RecipePhoto from "./RecipePhoto";
 export default function DiscoveryCard({ entry, href, onOpen, loading }) {
   const { recipe, metadata, cost } = entry;
   const kitchen = useKitchen();
@@ -32,7 +32,7 @@ export default function DiscoveryCard({ entry, href, onOpen, loading }) {
         aria-label={`View recipe: ${recipe.name}`}
       >
         <div className="discovery-card-visual">
-          <DishArt recipe={recipe} />
+          <RecipePhoto recipe={recipe} />
           <span className="dish-category">{metadata.label}</span>
           {cost.ready && !loading && (
             <span className="dish-priced">Prices complete</span>

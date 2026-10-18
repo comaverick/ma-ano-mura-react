@@ -19,6 +19,7 @@ import { KitchenProvider, useKitchen } from "./context/KitchenContext";
 import Planner from "./pages/Planner";
 import Coverage from "./pages/Coverage";
 import MyKitchen from "./pages/MyKitchen";
+import PhotoCredits from "./pages/PhotoCredits";
 import "./Design.css";
 function KitchenNotice() {
   const { storageError, notice } = useKitchen();
@@ -66,6 +67,7 @@ function App() {
                 <Route path="/planner" element={<Planner />} />
                 <Route path="/coverage" element={<Coverage />} />
                 <Route path="/my-kitchen" element={<MyKitchen />} />
+                <Route path="/photo-credits" element={<PhotoCredits />} />
                 <Route
                   path="*"
                   element={

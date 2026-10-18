@@ -4,11 +4,17 @@ A Filipino meal budget planner using NCR ingredient prices from DA Pricewatch an
 
 ## Choose an ulam
 
-The **Recipes** tab opens an illustrated gallery, with 12 cards at a time. Browse ulam, proteins, vegetables, rice/noodles, or merienda; search a dish or a listed ingredient, including aliases such as kamatis, hipon and manok. A search without an explicit group checks the whole collection. Cards show cooking time, ingredient count, shopping cost after pantry items, portions and price completeness. Costs use the same household portion count across the gallery (your saved household size, or four people by default), and opening a recipe carries those portions into the detail view.
+The **Recipes** tab opens a visual gallery, with 12 cards at a time. Browse ulam, proteins, vegetables, rice/noodles, or merienda; search a dish or a listed ingredient, including aliases such as kamatis, hipon and manok. A search without an explicit group checks the whole collection. Cards show cooking time, ingredient count, shopping cost after pantry items, portions and price completeness. Costs use the same household portion count across the gallery (your saved household size, or four people by default), and opening a recipe carries those portions into the detail view.
 
 Combine cooking time, meal budget, servings, complete-price and saved-only filters. Budget matches require complete, recent shopping costs; partial subtotals never qualify. Sort by recommendations, cooking time, complete cost, pantry use or name. **Choose for me** picks from matching recipes, preferring complete estimates when available. Save directly from a card, or open a focused recipe page for measurements and cooking steps. Browse filters, pagination and scroll position survive returning from the recipe, including with browser Back. Existing recipe URLs continue to work; unknown recipe IDs have a recovery link.
 
-The app uses a shared warm color palette, larger typography, rounded cards and controls, and food illustrations across its redesigned home, recipe gallery, planner, market, categories and kitchen profile. The layout adapts to narrow phones and preserves print layouts for shopping lists.
+The app uses a shared warm color palette, larger typography, rounded cards and controls, and food photos with illustrated fallbacks across its redesigned home, recipe gallery, planner, market, categories and kitchen profile. The layout adapts to narrow phones and preserves print layouts for shopping lists.
+
+## Food photography
+
+The homepage, recipe cards and recipe details use locally hosted, optimized WebP photos of Filipino dishes. Matching uses the dish name and listed main protein; unrelated recipes and failed image loads retain the food illustration. Photos are serving suggestions, not exact results for every recipe variation. Cards load images lazily with responsive 480/960-pixel sources; prominent photos load eagerly.
+
+`src/data/recipePhotos.json` records the original Commons page, author, license and original image URL for each photo in `public/food-photos/`. The app links to **Photo credits** in the footer and includes attribution beside recipe-detail photos. Each resized/compressed image retains its listed license; responsive crops are disclosed on the credits page. Check the original file page and license before replacing an asset. Photography is bundled with the app and does not depend on the daily price collection workflow.
 
 ## Plan meals and shopping
 

@@ -8,7 +8,7 @@ import { useMarket } from "../../context/MarketContext";
 import domainCosting from "../../domain/costing.js";
 import { formatMoney, formatTime } from "../../utils/format";
 import "./RecipeCard.css";
-import DishArt from "../DishArt";
+import RecipePhoto from "../RecipePhoto";
 import discovery from "../../domain/discovery.js";
 import { useKitchen } from "../../context/KitchenContext";
 import measurementsDomain from "../../domain/measurements.js";
@@ -34,7 +34,7 @@ export default function RecipeCard({
       to={`/recipes?recipe=${encodeURIComponent(recipe.id)}`}
     >
       <div className="recipe-card-art">
-        <DishArt recipe={recipe} />
+        <RecipePhoto recipe={recipe} />
         <span className="recipe-card-label">
           {discovery.discoveryMetadata(recipe).label}
         </span>

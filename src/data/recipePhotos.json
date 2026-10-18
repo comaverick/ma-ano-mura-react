@@ -1,0 +1,602 @@
+{
+  "chicken-afritada": {
+    "label": "Chicken afritada",
+    "author": "Jo Paragas",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Chicken_Afritada_on_white_rice_with_pineapple_tidbits_(Philippines)_2.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/6/63/Chicken_Afritada_on_white_rice_with_pineapple_tidbits_%28Philippines%29_2.jpg",
+    "alt": "Chicken afritada",
+    "position": "center"
+  },
+  "ginataang-kalabasa": {
+    "label": "Ginataang kalabasa with shrimp",
+    "author": "Yvette Tan",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Ginataang_kalabasa_at_hipon_(shrimp,_calabaza,_green_beans,_and_eggplant_in_coconut_milk)_-_Philippines.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Ginataang_kalabasa_at_hipon_%28shrimp%2C_calabaza%2C_green_beans%2C_and_eggplant_in_coconut_milk%29_-_Philippines.jpg",
+    "alt": "Ginataang kalabasa with shrimp",
+    "position": "center"
+  },
+  "monggo": {
+    "label": "Ginisang munggo",
+    "author": "Ramon FVelasquez",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Monggojf.JPG",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/b/b0/Monggojf.JPG",
+    "alt": "Ginisang munggo",
+    "position": "center"
+  },
+  "kare-kare": {
+    "label": "Kare-kare",
+    "author": "GwennVienn",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Mac_MG_5939.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/a/ac/Mac_MG_5939.jpg",
+    "alt": "Kare-kare",
+    "position": "center"
+  },
+  "tinola": {
+    "label": "Chicken tinola",
+    "author": "Anne Molina",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Chicken_tinola.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/6/62/Chicken_tinola.jpg",
+    "alt": "Chicken tinola",
+    "position": "center"
+  },
+  "bistek": {
+    "label": "Bistek Tagalog",
+    "author": "Joy D. Ganaden",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Bistek_Tagalog_DSCF3899.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/0/08/Bistek_Tagalog_DSCF3899.jpg",
+    "alt": "Bistek Tagalog",
+    "position": "center"
+  },
+  "dinuguan": {
+    "label": "Dinuguan",
+    "author": "Kat",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Dinuguan_and_Puto.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/5/52/Dinuguan_and_Puto.jpg",
+    "alt": "Dinuguan",
+    "position": "center"
+  },
+  "kaldereta": {
+    "label": "Kaldereta",
+    "author": "dbgg1979",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Home_cooked_Kaldereta.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/2/24/Home_cooked_Kaldereta.jpg",
+    "alt": "Kaldereta",
+    "position": "center"
+  },
+  "laing": {
+    "label": "Laing",
+    "author": "Lokalpedia",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Laing,_Bicolano_dish.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/5/59/Laing%2C_Bicolano_dish.jpg",
+    "alt": "Laing",
+    "position": "center"
+  },
+  "lechon-kawali": {
+    "label": "Lechon kawali",
+    "author": "punctuated",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Lechon_Kawali.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/c/cc/Lechon_Kawali.jpg",
+    "alt": "Lechon kawali",
+    "position": "center"
+  },
+  "mechado": {
+    "label": "Mechado",
+    "author": "BrokenSphere",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Cooked_mechado.JPG",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/6/65/Cooked_mechado.JPG",
+    "alt": "Mechado",
+    "position": "center"
+  },
+  "pinakbet": {
+    "label": "Pinakbet",
+    "author": "Jesse Alegre",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pinakbet_ni_Lakay_Jesse.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/c/cf/Pinakbet_ni_Lakay_Jesse.jpg",
+    "alt": "Pinakbet",
+    "position": "center"
+  },
+  "pork-sisig": {
+    "label": "Sisig",
+    "author": "Joy L. Cruz",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Authentic_Kapampangan_Sisig.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/d/d7/Authentic_Kapampangan_Sisig.jpg",
+    "alt": "Sisig",
+    "position": "center"
+  },
+  "bicol-express": {
+    "label": "Bicol express",
+    "author": "Raymund Macaalay",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Bicol_Express.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Bicol_Express.jpg",
+    "alt": "Bicol express",
+    "position": "center"
+  },
+  "menudo": {
+    "label": "Menudo (Filipino stew)",
+    "author": "RightCowLeftCoast",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Orient_Valley_Filipino_Cuisine_-_5.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/c/ce/Orient_Valley_Filipino_Cuisine_-_5.jpg",
+    "alt": "Menudo (Filipino stew)",
+    "position": "center"
+  },
+  "arroz-caldo": {
+    "label": "Arroz caldo",
+    "author": "Ernesto Andrade",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Home_-_Dinner.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/1/17/Home_-_Dinner.jpg",
+    "alt": "Arroz caldo",
+    "position": "center"
+  },
+  "inasal": {
+    "label": "Chicken inasal",
+    "author": "michael reyes from Philippines",
+    "license": "CC BY-SA 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Olympus_EP3_-_Mang_Inasal_Roasted_Chicken_(14456257212).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/92/Olympus_EP3_-_Mang_Inasal_Roasted_Chicken_%2814456257212%29.jpg",
+    "alt": "Chicken inasal",
+    "position": "center"
+  },
+  "crispy-pata": {
+    "label": "Crispy pata",
+    "author": "Cyapoj",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Crispy_Pata_Pork.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/2/2a/Crispy_Pata_Pork.jpg",
+    "alt": "Crispy pata",
+    "position": "center"
+  },
+  "bangus": {
+    "label": "Daing",
+    "author": "bingbing on flickr",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Daing_na_bangus.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/8/88/Daing_na_bangus.jpg",
+    "alt": "Daing",
+    "position": "center"
+  },
+  "lumpia": {
+    "label": "Lumpiang Shanghai",
+    "author": "Arnold Gatilao",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Lumpiang_Shanghai_(Philippines).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/95/Lumpiang_Shanghai_%28Philippines%29.jpg",
+    "alt": "Lumpiang Shanghai",
+    "position": "center"
+  },
+  "pininyahang-manok": {
+    "label": "Pininyahang manok",
+    "author": "pulaw",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pineapple_chicken_(Pininyahang_Manok).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/5/51/Pineapple_chicken_%28Pininyahang_Manok%29.jpg",
+    "alt": "Pininyahang manok",
+    "position": "center"
+  },
+  "tortang-talong": {
+    "label": "Tortang talong",
+    "author": "whologwhy",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:EGGPLANT_TORTA.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/1/1e/EGGPLANT_TORTA.jpg",
+    "alt": "Tortang talong",
+    "position": "center"
+  },
+  "bulalo": {
+    "label": "Bulalo",
+    "author": "LReformado",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:BULALO.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/f/f3/BULALO.jpg",
+    "alt": "Bulalo",
+    "position": "center"
+  },
+  "spaghetti": {
+    "label": "Filipino spaghetti",
+    "author": "Arnold Gatilao",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Filipino_Spaghetti_2.0.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/8/88/Filipino_Spaghetti_2.0.jpg",
+    "alt": "Filipino spaghetti",
+    "position": "center"
+  },
+  "nilaga": {
+    "label": "Nilaga",
+    "author": "Ramon FVelasquez",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Bulacan,Batangasjf8355_22.JPG",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/6/6d/Bulacan%2CBatangasjf8355_22.JPG",
+    "alt": "Nilaga",
+    "position": "center"
+  },
+  "sinangag": {
+    "label": "Sinangag",
+    "author": "Judgefloro",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:09530jfCuisine_Foods_Fruits_Philippines_Baliuag_Bulacanfvf_22.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/9f/09530jfCuisine_Foods_Fruits_Philippines_Baliuag_Bulacanfvf_22.jpg",
+    "alt": "Sinangag",
+    "position": "center"
+  },
+  "sopas": {
+    "label": "Sopas",
+    "author": "Judgefloro",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:8475Photos_taken_2020_coronavirus_pandemic_Baliuag,_Bulacan_17.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/a/aa/8475Photos_taken_2020_coronavirus_pandemic_Baliuag%2C_Bulacan_17.jpg",
+    "alt": "Sopas",
+    "position": "center"
+  },
+  "turon": {
+    "label": "Turon",
+    "author": "Herbertkikoy",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Turon_na_Saging.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/2/28/Turon_na_Saging.jpg",
+    "alt": "Turon",
+    "position": "center"
+  },
+  "ukoy": {
+    "label": "Okoy",
+    "author": "jojo nicdao",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Ukoy_(shrimp_fritters)_from_Vigan,_Philippines.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Ukoy_%28shrimp_fritters%29_from_Vigan%2C_Philippines.jpg",
+    "alt": "Okoy",
+    "position": "center"
+  },
+  "biko": {
+    "label": "Biko",
+    "author": "Herbertkikoy",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Sticky_Rice_Cake_Biko.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/0/08/Sticky_Rice_Cake_Biko.jpg",
+    "alt": "Biko",
+    "position": "center"
+  },
+  "champorado": {
+    "label": "Champorado",
+    "author": "Josh James from Imus, Philippines",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Champorado.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/93/Champorado.jpg",
+    "alt": "Champorado",
+    "position": "center"
+  },
+  "kutsinta": {
+    "label": "Kutsinta",
+    "author": "Herbertkikoy",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Kutsinta.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/f/f2/Kutsinta.jpg",
+    "alt": "Kutsinta",
+    "position": "center"
+  },
+  "maja-blanca": {
+    "label": "Maja blanca",
+    "author": "kawalingpinoy",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Majablanca.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/7/7d/Majablanca.jpg",
+    "alt": "Maja blanca",
+    "position": "center"
+  },
+  "palitaw": {
+    "label": "Palitaw",
+    "author": "Original uploaded by ChildofMidnight (Transfered by Diádoco)",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Palitaw_Sm.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/2/2e/Palitaw_Sm.jpg",
+    "alt": "Palitaw",
+    "position": "center"
+  },
+  "suman": {
+    "label": "Suman",
+    "author": "GwennVienn",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Mac_MG_6026.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/d/d2/Mac_MG_6026.jpg",
+    "alt": "Suman",
+    "position": "center"
+  },
+  "ube-halaya": {
+    "label": "Ube halaya",
+    "author": "Lokalpedia",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Ube_halaya,_Filipino_dessert.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/b/ba/Ube_halaya%2C_Filipino_dessert.jpg",
+    "alt": "Ube halaya",
+    "position": "center"
+  },
+  "fried-chicken": {
+    "label": "Fried chicken",
+    "author": "Evan-Amos",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:Fried-Chicken-Set.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/2/2c/Fried-Chicken-Set.jpg",
+    "alt": "Fried chicken",
+    "position": "center"
+  },
+  "pandesal": {
+    "label": "Pandesal",
+    "author": "Jessartcam",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pinoy_Pandesal.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/4/48/Pinoy_Pandesal.jpg",
+    "alt": "Pandesal",
+    "position": "center"
+  },
+  "chicken-adobo": {
+    "label": "Chicken adobo",
+    "author": "dbgg1979 on flickr",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Chicken_adobo.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/3/38/Chicken_adobo.jpg",
+    "alt": "Chicken adobo",
+    "position": "center"
+  },
+  "pork-adobo": {
+    "label": "Pork adobo",
+    "author": "pulaw",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pork_Adobo_-_11618429074.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/6/69/Pork_Adobo_-_11618429074.jpg",
+    "alt": "Pork adobo",
+    "position": "center"
+  },
+  "pork-sinigang": {
+    "label": "Pork sinigang",
+    "author": "Ralff Nestor Nacor",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pork_Sinigang,_Feb_2024.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/2/27/Pork_Sinigang%2C_Feb_2024.jpg",
+    "alt": "Pork sinigang",
+    "position": "center"
+  },
+  "chicken-curry": {
+    "label": "Filipino chicken curry",
+    "author": "Ramon FVelasquez",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Philippine_Chicken_curry_(cropped).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/1/1a/Philippine_Chicken_curry_%28cropped%29.jpg",
+    "alt": "Filipino chicken curry",
+    "position": "center"
+  },
+  "bibingka": {
+    "label": "Bibingka",
+    "author": "Obsidian Soul",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:Bibingka_(Philippines).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/8/83/Bibingka_%28Philippines%29.jpg",
+    "alt": "Bibingka",
+    "position": "center"
+  },
+  "puto": {
+    "label": "Puto",
+    "author": "Obsidian Soul",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:Puto_(Filipino_rice_cake)_with_cheese.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/2/2d/Puto_%28Filipino_rice_cake%29_with_cheese.jpg",
+    "alt": "Puto",
+    "position": "center"
+  },
+  "leche-flan": {
+    "label": "Leche flan",
+    "author": "Marife.altabano",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Leche_Flan_01.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/9e/Leche_Flan_01.jpg",
+    "alt": "Leche flan",
+    "position": "center"
+  },
+  "ensaymada": {
+    "label": "Filipino ensaymada",
+    "author": "Obsidian Soul",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:Filipino_ensaymada_(ensaimada).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/f/f5/Filipino_ensaymada_%28ensaimada%29.jpg",
+    "alt": "Filipino ensaymada",
+    "position": "center"
+  },
+  "pancit-bihon": {
+    "label": "Pancit bihon",
+    "author": "Obsidian Soul",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:Pancit_bihon_1.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/4/41/Pancit_bihon_1.jpg",
+    "alt": "Pancit bihon",
+    "position": "center"
+  },
+  "pancit-canton": {
+    "label": "Pancit canton",
+    "author": "Andrea Fistetto",
+    "license": "CC BY-SA 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pancit_canton.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Pancit_canton.jpg",
+    "alt": "Pancit canton",
+    "position": "center"
+  },
+  "palabok": {
+    "label": "Pancit palabok",
+    "author": "Judgefloro",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:Pancit_palabok_with_calamansi_(cropped).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/4/45/Pancit_palabok_with_calamansi_%28cropped%29.jpg",
+    "alt": "Pancit palabok",
+    "position": "center"
+  },
+  "fried-tilapia": {
+    "label": "Fried tilapia",
+    "author": "Ralff Nestor Nacor",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Fried_Tilapia,_Jul_2024.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/95/Fried_Tilapia%2C_Jul_2024.jpg",
+    "alt": "Fried tilapia",
+    "position": "center"
+  },
+  "tofu-sisig": {
+    "label": "Tofu sisig",
+    "author": "Aerous",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Tofu_sisig_with_siling_labuyo.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/5/51/Tofu_sisig_with_siling_labuyo.jpg",
+    "alt": "Tofu sisig",
+    "position": "center"
+  },
+  "pork-barbecue": {
+    "label": "Pork barbecue",
+    "author": "Roderick Suñaz Sumalinog",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pork_Barbecue_2023.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/8/87/Pork_Barbecue_2023.jpg",
+    "alt": "Pork barbecue",
+    "position": "center"
+  },
+  "pork-ginataang-kalabasa": {
+    "label": "Ginataang kalabasa with pork",
+    "author": "KEESPLANA",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Ginataang_kalabasa.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/4/4f/Ginataang_kalabasa.jpg",
+    "alt": "Ginataang kalabasa with pork",
+    "position": "center"
+  },
+  "bok-choy": {
+    "label": "Stir-fried bok choy",
+    "author": "Ralff Nestor Nacor",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Stir_Fried_Bok_Choy,_Aug_2025.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/6/65/Stir_Fried_Bok_Choy%2C_Aug_2025.jpg",
+    "alt": "Stir-fried bok choy",
+    "position": "center"
+  },
+  "garlic-shrimp": {
+    "label": "Garlic butter shrimp",
+    "author": "Zheng Zhou",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Butter_Garlic_Shrimp_(with_rice),_Haleiwa,_Hawaii.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/90/Butter_Garlic_Shrimp_%28with_rice%29%2C_Haleiwa%2C_Hawaii.jpg",
+    "alt": "Garlic butter shrimp",
+    "position": "center"
+  },
+  "salmon-curry": {
+    "label": "Salmon curry",
+    "author": "Daderot",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:Salmon_curry_with_rice_-_Massachusetts.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/6/6f/Salmon_curry_with_rice_-_Massachusetts.jpg",
+    "alt": "Salmon curry",
+    "position": "center"
+  },
+  "corned-beef": {
+    "label": "Corned beef guisado",
+    "author": "Obsidian Soul",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:Carne_norte_guisado_(Corned_beef_guisado)_-_Philippines_02.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/3/33/Carne_norte_guisado_%28Corned_beef_guisado%29_-_Philippines_02.jpg",
+    "alt": "Corned beef guisado",
+    "position": "center"
+  },
+  "ampalaya": {
+    "label": "Ginisang ampalaya",
+    "author": "FBenjr123",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Ang_Ginisang_Ampalaya_01.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/a/a1/Ang_Ginisang_Ampalaya_01.jpg",
+    "alt": "Ginisang ampalaya",
+    "position": "center"
+  },
+  "bangus-bistek": {
+    "label": "Bangus steak",
+    "author": "Judgefloro",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:9253Home_cooking_in_the_Philippines_32.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/f/fe/9253Home_cooking_in_the_Philippines_32.jpg",
+    "alt": "Bangus steak",
+    "position": "center"
+  },
+  "mixed-adobo": {
+    "label": "Chicken and pork adobo",
+    "author": "BrokenSphere",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Homemade_chicken_%26_pork_adobo.JPG",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/b/b7/Homemade_chicken_%26_pork_adobo.JPG",
+    "alt": "Chicken and pork adobo",
+    "position": "center"
+  }
+}

@@ -18,12 +18,13 @@ import {
   formatSource,
 } from "../utils/format";
 import RecipeCard from "../components/RecipeCard/RecipeCard";
-import adobo from "../assets/adobo.png";
+import RecipePhoto from "../components/RecipePhoto";
 import "./Home.css";
 import { useKitchen } from "../context/KitchenContext";
 import measurementsDomain from "../domain/measurements.js";
 import preferences from "../domain/preferences.js";
 const { getLatestPrice, priceRecipe } = domainCosting;
+const heroDish = { name: "Chicken adobo", ingredients: ["1 kg chicken"] };
 export default function Home() {
   const { measurements, profile, pantry, favorites } = useKitchen();
   const {
@@ -180,10 +181,11 @@ export default function Home() {
           </div>
           <div className="home-hero-visual">
             <div className="hero-image-frame">
-              <img
-                src={adobo}
-                alt="A bowl of Filipino chicken adobo with rice"
-                fetchPriority="high"
+              <RecipePhoto
+                recipe={featured[0] || heroDish}
+                priority
+                detail
+                sizes="(max-width: 800px) 100vw, 600px"
               />
               <span className="hero-photo-label">A CLASSIC FOR A REASON</span>
             </div>
